@@ -1,0 +1,24 @@
+{
+  "jsc": {
+    "target": "esnext",
+    "parser": {
+      "syntax": "typescript",
+      "decorators": true,
+      "dynamicImport": true,
+      "importMeta": true,
+      "topLevelAwait": true,
+      "externalHelpers": true
+    },
+    "transform": {
+      "decoratorMetadata": true
+    },
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "module": {
+    "type": "es6"
+  },
+  "isModule": true
+}
