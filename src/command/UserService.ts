@@ -19,6 +19,15 @@ import {
 import throwInteraction from "@/utils/throwInteraction";
 import ProfileRegister from "@/internal/ProfileRegister";
 
+interface Profile {
+  nickname: string;
+  clanname?: string;
+  position: string;
+  ability: string;
+  weapon: string;
+  gadget: string[];
+}
+
 @SlashGroup({
   name: "프로필",
   description: "프로필 관련 명령어",
@@ -42,6 +51,7 @@ export default class UserService {
         new TextInputBuilder()
           .setCustomId("clanname")
           .setLabel("클랜명")
+          .setPlaceholder("해당되지 않을 시 미작성")
           .setStyle(TextInputStyle.Short)
           .setRequired(false),
       ),
@@ -62,8 +72,8 @@ export default class UserService {
   @SlashGroup("프로필")
   private async registerProfile(
     @SlashOption({
-      name: "배틀태그",
-      description: "더 파이널스 인게임에서 표시되는 배틀태그",
+      name: "embark_id",
+      description: "더 파이널스 인게임에서 표시되는 엠바크 ID (배틀태그)",
       type: ApplicationCommandOptionType.String,
       required: true,
     })
@@ -216,12 +226,11 @@ export default class UserService {
           },
           {
             name: "가젯",
-            value: profile.gadget,
+            value: profile.gadget.join(", "),
             inline: true,
           },
         ),
       ],
-      ephemeral: true,
     });
   }
 }
