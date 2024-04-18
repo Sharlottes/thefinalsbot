@@ -2,6 +2,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  Colors,
   EmbedBuilder,
   StringSelectMenuBuilder,
   bold,
@@ -16,7 +17,7 @@ export default class ProfileRegister {
   public position?: string;
   public ability?: string;
   public weapon?: string;
-  public gadget?: string;
+  public gadget: string[] = [];
 
   constructor(
     public readonly interaction: Discord.ChatInputCommandInteraction,
@@ -68,7 +69,7 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
             },
             {
               name: "가젯",
-              value: this.gadget || "선택되지 않음",
+              value: this.gadget.join(", ") || "선택되지 않음",
               inline: true,
             },
           ),
@@ -111,7 +112,7 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
             .addOptions(
               this.position
                 ? contentDataset[this.position].abilities.map((ability) => ({
-                    label: ability,
+                    label: ability + (this.ability == ability ? " ✅" : ""),
                     value: ability,
                   }))
                 : [{ label: "비어있음", value: "선택되지 않음" }],
@@ -124,7 +125,7 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
             .addOptions(
               this.position
                 ? contentDataset[this.position].weapons.map((weapon) => ({
-                    label: weapon,
+                    label: weapon + (this.weapon == weapon ? " ✅" : ""),
                     value: weapon,
                   }))
                 : [{ label: "비어있음", value: "선택되지 않음" }],
@@ -133,11 +134,11 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
         new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
           new StringSelectMenuBuilder()
             .setCustomId("gadget")
-            .setPlaceholder(this.gadget ?? "가젯을 선택해주세요")
+            .setPlaceholder(this.gadget.join(", ") || "가젯을 선택해주세요")
             .addOptions(
               this.position
                 ? contentDataset[this.position].gadgets.map((gadget) => ({
-                    label: gadget,
+                    label: gadget + (this.gadget.includes(gadget) ? " ✅" : ""),
                     value: gadget,
                   }))
                 : [{ label: "비어있음", value: "선택되지 않음" }],
@@ -151,7 +152,6 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
     });
 
     if (interaction.isStringSelectMenu()) {
-      throwInteraction(interaction);
       switch (interaction.customId) {
         case "position":
           const newPosition = interaction.values[0];
@@ -161,18 +161,17 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
                 this.ability ?? "",
               )
             ) {
-              this.ability = "선택되지 않음";
+              this.ability = undefined;
             }
             if (
               !contentDataset[newPosition].weapons.includes(this.weapon ?? "")
             ) {
-              this.weapon = "선택되지 않음";
+              this.weapon = undefined;
             }
-            if (
-              !contentDataset[newPosition].gadgets.includes(this.gadget ?? "")
-            ) {
-              this.gadget = "선택되지 않음";
-            }
+
+            this.gadget.filter((g) =>
+              contentDataset[newPosition].gadgets.includes(g),
+            );
           }
 
           this.position = interaction.values[0];
@@ -184,9 +183,25 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
           this.weapon = interaction.values[0];
           break;
         case "gadget":
-          this.gadget = interaction.values[0];
+          const value = interaction.values[0];
+          if (this.gadget.includes(value)) {
+            this.gadget = this.gadget.filter((g) => g !== value);
+          } else if (this.gadget.length < 3) {
+            this.gadget.push(value);
+          } else {
+            interaction.reply({
+              embeds: [
+                new EmbedBuilder()
+                  .setTitle("이런!")
+                  .setDescription("가젯은 총 3개만 가능합니다!")
+                  .setColor(Colors.Red),
+              ],
+              ephemeral: true,
+            });
+          }
           break;
       }
+      throwInteraction(interaction);
       this.rerender();
     }
   }
