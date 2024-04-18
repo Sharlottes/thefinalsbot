@@ -1,4 +1,5 @@
 import { DIService, Discord, On } from "discordx";
+import mongoose from "mongoose";
 
 @Discord()
 export default class Event {
@@ -7,6 +8,8 @@ export default class Event {
     _: DiscordX.ArgsOf<"ready">,
     client: DiscordX.Client,
   ): Promise<void> {
+    await mongoose.connect(process.env.MONGO_URL);
+
     DIService.engine.getAllServices();
     await client.initApplicationCommands();
 

@@ -10,6 +10,7 @@ import {
 } from "discord.js";
 import throwInteraction from "@/utils/throwInteraction";
 import { contentDataset } from "@/constants/contentDataset";
+import UserModel from "@/models/UserModel";
 
 export default class ProfileRegister {
   public nickname?: string;
@@ -28,7 +29,9 @@ export default class ProfileRegister {
     if (!this.interaction.deferred && !this.interaction.replied) {
       await this.interaction.deferReply();
     }
-
+    const hasUser = !!(await UserModel.findOne({
+      discordId: this.interaction.user.id,
+    }));
     const message = await this.interaction.editReply({
       embeds: [
         new EmbedBuilder()
@@ -72,6 +75,13 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
               value: this.gadget.join(", ") || "선택되지 않음",
               inline: true,
             },
+          )
+          .setFooter(
+            hasUser
+              ? {
+                  text: "주의: 프로필이 이미 존재합니다. 다시 등록할 경우 기존 프로필을 덮어씁니다.",
+                }
+              : null,
           ),
       ],
       components: [

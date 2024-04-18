@@ -18,15 +18,7 @@ import {
 } from "discord.js";
 import throwInteraction from "@/utils/throwInteraction";
 import ProfileRegister from "@/internal/ProfileRegister";
-
-interface Profile {
-  nickname: string;
-  clanname?: string;
-  position: string;
-  ability: string;
-  weapon: string;
-  gadget: string[];
-}
+import UserModel from "@/models/UserModel";
 
 @SlashGroup({
   name: "프로필",
@@ -34,7 +26,6 @@ interface Profile {
 })
 @Discord()
 export default class UserService {
-  profileStorage: Map<string, Profile> = new Map();
   profileSession: Map<Discord.Snowflake, ProfileRegister> = new Map();
   profileModal = new ModalBuilder()
     .setTitle("프로필 등록")
@@ -138,21 +129,27 @@ export default class UserService {
 
       return;
     }
+    await interaction.deferReply();
+    await new UserModel({
+      discordId: interaction.user.id,
+      battleTag: session.battleTag,
+      profile: {
+        nickname: session.nickname,
+        clanname: session.clanname,
+        position: session.position,
+        ability: session.ability,
+        weapon: session.weapon,
+        gadget: session.gadget,
+      },
+    }).save();
 
     session.interaction.editReply({
       content: "프로필이 성공적으로 등록되었습니다!",
       embeds: [],
       components: [],
     });
-    this.profileStorage.set(session.battleTag, {
-      nickname: session.nickname,
-      clanname: session.clanname,
-      position: session.position,
-      ability: session.ability,
-      weapon: session.weapon,
-      gadget: session.gadget,
-    });
     this.profileSession.delete(interaction.user.id);
+
     setTimeout(() => {
       session.interaction.deleteReply().catch(() => {});
     }, 1000 * 3);
@@ -172,7 +169,7 @@ export default class UserService {
     description: "등록한 프로필을 확인합니다",
   })
   @SlashGroup("프로필")
-  private infoProfile(
+  private async infoProfile(
     @SlashOption({
       name: "배틀태그",
       description: "더 파이널스 인게임에서 표시되는 배틀태그",
@@ -182,8 +179,8 @@ export default class UserService {
     battleTag: string,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
-    const profile = this.profileStorage.get(battleTag);
-    if (!profile) {
+    const user = await UserModel.findOne({ battleTag });
+    if (!user) {
       interaction.reply({
         embeds: [
           new EmbedBuilder()
@@ -201,32 +198,32 @@ export default class UserService {
         new EmbedBuilder().setTitle(battleTag + "님의 프로필").setFields(
           {
             name: "닉네임",
-            value: profile.nickname,
+            value: user.profile.nickname,
             inline: true,
           },
           {
             name: "클랜명",
-            value: profile.clanname || "비어있음",
+            value: user.profile.clanname || "비어있음",
             inline: true,
           },
           {
             name: "포지션",
-            value: profile.position,
+            value: user.profile.position || "비어있음",
             inline: true,
           },
           {
             name: "주특기",
-            value: profile.ability,
+            value: user.profile.ability || "비어있음",
             inline: true,
           },
           {
             name: "무기",
-            value: profile.weapon,
+            value: user.profile.weapon || "비어있음",
             inline: true,
           },
           {
             name: "가젯",
-            value: profile.gadget.join(", "),
+            value: user.profile.gadget.join(", "),
             inline: true,
           },
         ),

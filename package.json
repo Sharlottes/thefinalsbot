@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon --exec \"yarn build && yarn start\"",
     "prod": "cross-env NODE_ENV=production yarn build && yarn start",
-    "start": "node --loader=extensionless/register ./dist/main.js",
+    "start": "node --experimental-loader=extensionless ./dist/main.js",
     "build": "swc ./src -d dist --strip-leading-paths",
     "ts-check": "tsc --noEmit",
     "format": "prettier --cache --write ."
@@ -29,6 +29,8 @@
     "discordx": "^11.9.0",
     "dotenv": "^16.4.4",
     "express": "^4.19.2",
+    "mongodb": "^6.5.0",
+    "mongoose": "^8.3.2",
     "reflect-metadata": "^0.2.1",
     "tsyringe": "^4.8.0"
   },
