@@ -4,6 +4,7 @@ import { container, instanceCachingFactory } from "tsyringe";
 import { dirname, importx } from "@discordx/importer";
 import * as Discord from "discord.js";
 import dotenv from "dotenv";
+import "./express";
 
 dotenv.config();
 
