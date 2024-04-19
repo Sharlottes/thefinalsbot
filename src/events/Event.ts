@@ -19,7 +19,7 @@ export default class Event {
     });
 
     console.log(
-      `Commands are all resrc/utils/openEntryPoint.tsgistered, total: ${client.applicationCommands.length}`,
+      `Commands are all registered, total: ${client.applicationCommands.length}`,
     );
     console.log(`Bot ${client.user?.tag} ready`);
   }
