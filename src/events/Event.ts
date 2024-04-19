@@ -1,3 +1,4 @@
+import { ActivityType } from "discord.js";
 import { DIService, Discord, On } from "discordx";
 import mongoose from "mongoose";
 
@@ -12,6 +13,10 @@ export default class Event {
 
     DIService.engine.getAllServices();
     await client.initApplicationCommands();
+    client.user?.setPresence({
+      status: "online",
+      activities: [{ name: "/프로필 등록,확인", type: ActivityType.Custom }],
+    });
 
     console.log(
       `Commands are all resrc/utils/openEntryPoint.tsgistered, total: ${client.applicationCommands.length}`,
