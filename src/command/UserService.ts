@@ -95,8 +95,8 @@ export default class UserService {
     );
     throwInteraction(interaction);
     const session = this.getSession(interaction.user.id);
-    session.nickname = nickname;
-    session.clanname = clanname;
+    session.profile.nickname = nickname;
+    session.profile.clanname = clanname;
     session.rerender();
   }
 
@@ -108,11 +108,11 @@ export default class UserService {
 
     if (
       !(
-        session.ability &&
-        session.weapon &&
-        session.gadget &&
-        session.nickname &&
-        session.position
+        session.profile.ability &&
+        session.profile.weapon &&
+        session.profile.gadget &&
+        session.profile.nickname &&
+        session.profile.position
       )
     ) {
       interaction.reply({
@@ -135,12 +135,12 @@ export default class UserService {
       discordId: interaction.user.id,
       battleTag: session.battleTag,
       profile: {
-        nickname: session.nickname,
-        clanname: session.clanname,
-        position: session.position,
-        ability: session.ability,
-        weapon: session.weapon,
-        gadget: session.gadget,
+        nickname: session.profile.nickname,
+        clanname: session.profile.clanname,
+        position: session.profile.position,
+        ability: session.profile.ability,
+        weapon: session.profile.weapon,
+        gadget: session.profile.gadget,
       },
     }).save();
 

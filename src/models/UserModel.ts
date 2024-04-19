@@ -24,6 +24,10 @@ const userSchema = new Schema<UserData, UserModel, {}>(
       ability: { type: String, required: false },
       weapon: { type: String, required: false },
       gadget: { type: [String], required: false, default: [] },
+      preferPlaying: { type: [String], required: false, default: [] },
+      preferUser: { type: [String], required: false, default: [] },
+      preferPlayTime: { type: [String], required: false, default: [] },
+      preferInterest: { type: [String], required: false, default: [] },
     },
   },
   {
