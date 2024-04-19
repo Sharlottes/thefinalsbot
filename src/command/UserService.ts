@@ -63,7 +63,7 @@ export default class UserService {
   @SlashGroup("프로필")
   private async registerProfile(
     @SlashOption({
-      name: "embark_id",
+      name: "배틀태그",
       description: "더 파이널스 인게임에서 표시되는 엠바크 ID (배틀태그)",
       type: ApplicationCommandOptionType.String,
       required: true,
