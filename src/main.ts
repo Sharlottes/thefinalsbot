@@ -14,6 +14,7 @@ DIService.engine = tsyringeDependencyRegistryEngine
 const client = new Client({
   intents: [
     Discord.GatewayIntentBits.Guilds,
+    Discord.GatewayIntentBits.GuildMembers,
     Discord.GatewayIntentBits.GuildMessages,
     Discord.GatewayIntentBits.MessageContent,
     Discord.GatewayIntentBits.GuildMessageReactions,

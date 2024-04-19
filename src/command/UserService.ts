@@ -15,6 +15,7 @@ import {
   Snowflake,
   TextInputBuilder,
   TextInputStyle,
+  inlineCode,
 } from "discord.js";
 import throwInteraction from "@/utils/throwInteraction";
 import ProfileRegister from "@/internal/ProfileRegister";
@@ -162,6 +163,25 @@ export default class UserService {
     const session = this.getSession(interaction.user.id);
     session.interaction.deleteReply();
     this.profileSession.delete(interaction.user.id);
+  }
+
+  @Slash({
+    name: "누가부스트함",
+    description: "글쎄요",
+  })
+  private async whotfboosted(interaction: Discord.ChatInputCommandInteraction) {
+    if (!interaction.guild) {
+      interaction.reply("길드가 없ㄷ음");
+      return;
+    }
+    await interaction.deferReply({ ephemeral: true });
+    const members = await interaction.guild.members.fetch();
+    interaction.editReply({
+      content: members
+        .filter((member) => member.premiumSince)
+        .map((member) => inlineCode(member.user.tag) + "님이 부스트중입니다!")
+        .join("\n"),
+    });
   }
 
   @Slash({
