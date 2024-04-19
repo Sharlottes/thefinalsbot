@@ -1,7 +1,6 @@
-import dotenv from "dotenv"; //* 잘됨
-import "reflect-metadata"; //* 잘됨
-import {} from "./express"; //* 잘됨
-import "./express"; //* 잘됨 (배포에선 안됨 <- ????)
+import dotenv from "dotenv";
+import "reflect-metadata";
+import {} from "./express";
 
 import { Client, DIService, tsyringeDependencyRegistryEngine } from "discordx";
 import { container, instanceCachingFactory } from "tsyringe";
