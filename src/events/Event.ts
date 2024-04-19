@@ -10,9 +10,11 @@ export default class Event {
     client: DiscordX.Client,
   ): Promise<void> {
     await mongoose.connect(process.env.MONGO_URL);
-
     DIService.engine.getAllServices();
     await client.initApplicationCommands();
+    if ((client.application?.commands.cache.size ?? 0) > 0) {
+      client.application?.commands.set([]);
+    }
     client.user?.setPresence({
       status: "online",
       activities: [{ name: "/프로필 등록,확인", type: ActivityType.Custom }],

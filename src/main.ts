@@ -24,10 +24,7 @@ const client = new Client({
     Discord.Partials.Channel,
     Discord.Partials.Reaction,
   ],
-  botGuilds:
-    process.env.NODE_ENV == "development"
-      ? [process.env.TEST_GUILD_ID]
-      : undefined,
+  botGuilds: [process.env.TEST_GUILD_ID],
 });
 
 await importx(
