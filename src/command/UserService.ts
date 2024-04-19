@@ -208,7 +208,10 @@ export default class UserService {
           },
           {
             name: "포지션",
-            value: user.profile.position || "비어있음",
+            value:
+              { light: "소형", middle: "중형", heavy: "대형" }[
+                user.profile.position ?? ""
+              ] || "비어있음",
             inline: true,
           },
           {
