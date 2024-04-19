@@ -1,3 +1,6 @@
-# 2024-joy
+# The finals Teams Bot
 
-2024 PROJECT JOY
+## How To Start
+
+`yarn`
+`yarn dev`
