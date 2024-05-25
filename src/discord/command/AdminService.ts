@@ -129,5 +129,6 @@ export default class AdminService {
       content: "확인했습니다",
       ephemeral: true,
     });
+    await interaction.message.delete().catch(() => {});
   }
 }
