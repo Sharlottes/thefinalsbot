@@ -28,7 +28,7 @@ const client = new Client({
 });
 
 await importx(
-  `${dirname(import.meta.url)}/{events,command,models}/**/*.{ts,js}`,
+  `${dirname(import.meta.url)}/{discord/events,discord/command,models}/**/*.{ts,js}`,
 );
 
 client.login(process.env.TOKEN);
