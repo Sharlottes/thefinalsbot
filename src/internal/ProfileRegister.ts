@@ -12,6 +12,38 @@ import throwInteraction from "@/utils/throwInteraction";
 import { contentDataset } from "@/constants/contentDataset";
 import UserModel from "@/models/UserModel";
 
+type Format =
+  `${"_" | ""}#${string}${`.${keyof typeof ButtonStyle}` | ""}${`[${string}]` | ""}|${`:${string}:` | ""}${string}`;
+const componentRegex =
+  /(?:(?<isDisabled>_))?#(?<id>\w+)(?:\.(?<style>\w+))?(?:\[(?<link>\w+)\])?\|(?:\:(?<emoji>.*)\:)?(?<content>.+)/;
+function createComponent(format: Format) {
+  const match = componentRegex.exec(format);
+  if (!match || !match.groups) throw new Error("Invalid format: " + format);
+  const { isDisabled, id, style, link, emoji, content } = match.groups;
+  const builder = new ButtonBuilder()
+    .setCustomId(id)
+    .setLabel(content)
+    .setDisabled(!!isDisabled)
+    .setStyle(ButtonStyle[(style as keyof typeof ButtonStyle) ?? "Primary"]);
+
+  if (link) builder.setURL(link);
+  if (emoji) builder.setEmoji(emoji);
+
+  return builder;
+}
+
+function createComponents(
+  ...formatsList: (Discord.ActionRowBuilder | Format[])[]
+): Discord.ActionRowBuilder[] {
+  return formatsList.map((formats) =>
+    Array.isArray(formats)
+      ? new ActionRowBuilder<ButtonBuilder>().addComponents(
+          formats.map(createComponent),
+        )
+      : formats,
+  );
+}
+
 export default class ProfileRegister {
   profile: Profile = {
     nickname: "",
@@ -37,7 +69,6 @@ export default class ProfileRegister {
     if (user) {
       this.profile = user.profile;
     }
-
     const message = await this.interaction.editReply({
       embeds: [
         new EmbedBuilder()
@@ -90,21 +121,12 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
               : null,
           ),
       ],
-      components: [
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setCustomId("text_input")
-            .setLabel("닉네임과 클랜명 입력하기")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("submit")
-            .setLabel("확인")
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId("cancel")
-            .setLabel("취소")
-            .setStyle(ButtonStyle.Danger),
-        ),
+      components: createComponents(
+        [
+          "#text_input.Secondary|닉네임과 클랜명 입력하기",
+          "#submit.Success|확인",
+          "#cancel.Danger|취소",
+        ],
         new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
           new StringSelectMenuBuilder()
             .setCustomId("position")
@@ -173,7 +195,7 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
                 : [{ label: "비어있음", value: "선택되지 않음" }],
             ),
         ),
-      ],
+      ) as Discord.ActionRowBuilder<Discord.MessageActionRowComponentBuilder>[],
     });
 
     const interaction = await message.awaitMessageComponent({
