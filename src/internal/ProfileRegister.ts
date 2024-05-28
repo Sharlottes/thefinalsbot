@@ -11,6 +11,7 @@ import {
 import throwInteraction from "@/utils/throwInteraction";
 import { contentDataset } from "@/constants/contentDataset";
 import UserModel from "@/models/UserModel";
+import { createComponents } from "@/utils/createComponent";
 
 export default class ProfileRegister {
   profile: Profile = {
@@ -37,7 +38,6 @@ export default class ProfileRegister {
     if (user) {
       this.profile = user.profile;
     }
-
     const message = await this.interaction.editReply({
       embeds: [
         new EmbedBuilder()
@@ -90,7 +90,12 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
               : null,
           ),
       ],
-      components: [
+      components: createComponents(
+        [
+          "#text_input.Secondary|닉네임과 클랜명 입력하기",
+          "#submit.Success|확인",
+          "#cancel.Danger|취소",
+        ],
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId("text_input")
@@ -173,7 +178,7 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
                 : [{ label: "비어있음", value: "선택되지 않음" }],
             ),
         ),
-      ],
+      ) as Discord.ActionRowBuilder<Discord.MessageActionRowComponentBuilder>[],
     });
 
     const interaction = await message.awaitMessageComponent({
