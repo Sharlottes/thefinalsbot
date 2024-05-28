@@ -6,32 +6,6 @@ import { Client, DIService, tsyringeDependencyRegistryEngine } from "discordx";
 import { container, instanceCachingFactory } from "tsyringe";
 import { dirname, importx } from "@discordx/importer";
 import * as Discord from "discord.js";
-dotenv.config();
-
-DIService.engine = tsyringeDependencyRegistryEngine
-  .setCashingSingletonFactory(instanceCachingFactory)
-  .setInjector(container);
-const client = new Client({
-  intents: [
-    Discord.GatewayIntentBits.Guilds,
-    Discord.GatewayIntentBits.GuildMembers,
-    Discord.GatewayIntentBits.GuildMessages,
-    Discord.GatewayIntentBits.MessageContent,
-    Discord.GatewayIntentBits.GuildMessageReactions,
-  ],
-  partials: [
-    Discord.Partials.Message,
-    Discord.Partials.Channel,
-    Discord.Partials.Reaction,
-  ],
-  botGuilds: [process.env.TEST_GUILD_ID],
-});
-
-await importx(
-  `${dirname(import.meta.url)}/{discord/events,discord/command,models}/**/*.{ts,js}`,
-);
-
-client.login(process.env.TOKEN);
 
 process
   .on("unhandledRejection", (err) => {
@@ -52,3 +26,32 @@ process
       err,
     );
   });
+
+dotenv.config();
+
+DIService.engine = tsyringeDependencyRegistryEngine
+  .setCashingSingletonFactory(instanceCachingFactory)
+  .setInjector(container);
+export const client = new Client({
+  intents: [
+    Discord.GatewayIntentBits.Guilds,
+    Discord.GatewayIntentBits.GuildMembers,
+    Discord.GatewayIntentBits.GuildMessages,
+    Discord.GatewayIntentBits.MessageContent,
+    Discord.GatewayIntentBits.GuildMessageReactions,
+  ],
+  partials: [
+    Discord.Partials.Message,
+    Discord.Partials.Channel,
+    Discord.Partials.Reaction,
+  ],
+  botGuilds: [process.env.TEST_GUILD_ID],
+});
+console.log("start initing");
+await importx(
+  `${dirname(import.meta.url)}/internal/**/*.{ts,js}`,
+  `${dirname(import.meta.url)}/discord/{events,command}/**/*.{ts,js}`,
+);
+console.log("done, start login");
+await client.login(process.env.TOKEN);
+console.log("done");
