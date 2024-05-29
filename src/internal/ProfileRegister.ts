@@ -1,7 +1,5 @@
 import {
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   Colors,
   EmbedBuilder,
   StringSelectMenuBuilder,
@@ -96,20 +94,6 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
           "#submit.Success|확인",
           "#cancel.Danger|취소",
         ],
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setCustomId("text_input")
-            .setLabel("닉네임과 클랜명 입력하기")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("submit")
-            .setLabel("확인")
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId("cancel")
-            .setLabel("취소")
-            .setStyle(ButtonStyle.Danger),
-        ),
         new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
           new StringSelectMenuBuilder()
             .setCustomId("position")
