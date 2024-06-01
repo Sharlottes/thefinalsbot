@@ -39,6 +39,7 @@ export const client = new Client({
     Discord.GatewayIntentBits.GuildMessages,
     Discord.GatewayIntentBits.MessageContent,
     Discord.GatewayIntentBits.GuildMessageReactions,
+    Discord.GatewayIntentBits.GuildVoiceStates,
   ],
   partials: [
     Discord.Partials.Message,
