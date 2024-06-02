@@ -11,21 +11,13 @@ import {
 } from "discord.js";
 import { Discord, On } from "discordx";
 
-const MAX_MATCH = 1;
+const MAX_MATCH = 2;
 type MatchMakingType = "general" | "rank1" | "rank2";
-const idMap = {
-  general: "general_match_button",
-  rank1: "rank1_match_button",
-  rank2: "rank2_match_button",
+const keyMap = {
+  general: "일반전",
+  rank1: "브실골 경쟁전",
+  rank2: "플다 경쟁전",
 } as const;
-const keyMap: Record<
-  string,
-  [MatchMakingType, "일반전" | "브실골 경쟁전" | "플다 경쟁전"]
-> = {
-  general_match_button: ["general", "일반전"],
-  rank1_match_button: ["rank1", "브실골 경쟁전"],
-  rank2_match_button: ["rank2", "플다 경쟁전"],
-};
 
 @Discord()
 export default class MatchMaker {
@@ -44,7 +36,7 @@ export default class MatchMaker {
   }
 
   @On({ event: "ready" })
-  private async ready(
+  async onReady(
     _: DiscordX.ArgsOf<"ready">,
     client: DiscordX.Client,
   ): Promise<void> {
@@ -66,19 +58,74 @@ export default class MatchMaker {
     await Promise.all(messages.map((message) => message.delete()));
     this.#matchMakingMessage = await channel.send("waiting...");
     await this.rerender();
+  }
 
-    client.on("messageCreate", async (message) => {
-      if (!this.#matchMakingMessage) return;
-      if (this.#matchMakingMessage.channel.id !== message.channel.id) return;
-      message.delete();
-    });
+  @On({ event: "voiceStateUpdate" })
+  async onVoiceStateUpdate([
+    oldState,
+    newState,
+  ]: DiscordX.ArgsOf<"voiceStateUpdate">) {
+    if (
+      oldState.guild.id !== this.waitingChannel.guildId &&
+      newState.guild.id !== this.waitingChannel.guildId
+    ) {
+      return;
+    }
 
-    client.on("interactionCreate", async (interaction) => {
-      if (!interaction.isButton()) return;
-      if (interaction.message.id !== this.#matchMakingMessage.id) return;
+    if (
+      oldState.channelId === this.waitingChannel.id ||
+      newState.channelId === this.waitingChannel.id
+    ) {
+      const promises: Promise<unknown>[] = [];
 
-      this.handleMatchButton(interaction, interaction.customId as any);
-    });
+      for (const context of this.matchContextes) {
+        promises.push(
+          new Promise(async () => {
+            let isAllJoined = true;
+            await Promise.all(
+              context.sessions.map(async (session) => {
+                await session.rerender();
+                const isJoined = await session.isJoined();
+                isAllJoined &&= isJoined;
+              }),
+            );
+            if (isAllJoined) {
+              await context.createRoom();
+            }
+          }),
+        );
+      }
+      await Promise.all(promises);
+      await this.rerender();
+    } else {
+      this.matchContextes.forEach(async (context) => {
+        if (context.voiceChannel?.members.size === 0) {
+          await context.voiceChannel.delete();
+          this.matchContextes.delete(context);
+        }
+      });
+    }
+  }
+
+  @On({ event: "messageCreate" })
+  async onMessageCreate([message]: DiscordX.ArgsOf<"messageCreate">) {
+    if (
+      message.channel.id !== process.env.MATCHMAKING_ANNOUNCE_CHANNEL_ID ||
+      message.author.bot
+    ) {
+      return;
+    }
+
+    message.delete();
+  }
+
+  @On({ event: "interactionCreate" })
+  async onInteractionCreate([
+    interaction,
+  ]: DiscordX.ArgsOf<"interactionCreate">) {
+    if (!interaction.isButton()) return;
+    if (interaction.message.id !== this.#matchMakingMessage.id) return;
+    this.handleMatchButton(interaction, interaction.customId as any);
   }
 
   async handleMatchButton(
@@ -92,12 +139,23 @@ export default class MatchMaker {
     this.cancelMatch(interaction.user.id);
     // 취소 시 그냥 스킵
     if (interactionId !== "cancel_button") {
-      const [queueType, queueTypeName] = keyMap[interactionId];
+      const queueType = interactionId.replace(
+          "_match_button",
+          "",
+        ) as MatchMakingType,
+        queueTypeName = keyMap[queueType];
       this.matchQueue[queueType].push(interaction.user);
       this.matchingUsers.add(interaction.user.id);
       autoDeleteMessage(
         interaction.reply({
           content: `${bold(queueTypeName)} 매치메이킹을 시작합니다...`,
+          ephemeral: true,
+        }),
+      );
+    } else {
+      autoDeleteMessage(
+        interaction.reply({
+          content: `매치메이킹을 취소했습니다`,
           ephemeral: true,
         }),
       );
@@ -185,52 +243,6 @@ ${bold("대기자 수")}`,
       context.sessions.forEach((session) => session.init());
     }
   }
-
-  @On({ event: "voiceStateUpdate" })
-  async onVoiceStateUpdate([
-    oldState,
-    newState,
-  ]: DiscordX.ArgsOf<"voiceStateUpdate">) {
-    if (
-      oldState.guild.id !== this.waitingChannel.guildId &&
-      newState.guild.id !== this.waitingChannel.guildId
-    )
-      return;
-
-    if (
-      oldState.channelId === this.waitingChannel.id ||
-      newState.channelId === this.waitingChannel.id
-    ) {
-      const promises: Promise<unknown>[] = [];
-
-      for (const context of this.matchContextes) {
-        promises.push(
-          new Promise(async () => {
-            let isAllJoined = true;
-            await Promise.all(
-              context.sessions.map(async (session) => {
-                await session.rerender();
-                const isJoined = await session.isJoined();
-                isAllJoined &&= isJoined;
-              }),
-            );
-            if (isAllJoined) {
-              await context.createRoom();
-            }
-          }),
-        );
-      }
-      await Promise.all(promises);
-      await this.rerender();
-    } else {
-      this.matchContextes.forEach(async (context) => {
-        if (context.voiceChannel?.members.size === 0) {
-          await context.voiceChannel.delete();
-          this.matchContextes.delete(context);
-        }
-      });
-    }
-  }
 }
 
 class MatchMakingContext {
@@ -246,10 +258,11 @@ class MatchMakingContext {
     const matchMakeGuild = this.matchMaker.matchMakingMessage.guild!;
     const voiceChannel = await matchMakeGuild.channels.create({
       type: ChannelType.GuildVoice,
-      name: `${keyMap[idMap[this.type]][1]} 매치메이킹`,
+      name: `${keyMap[this.type]} 매치메이킹`,
       parent: process.env.MATCHMAKED_ROOM_CATEGORY_ID,
     });
     this.voiceChannel = voiceChannel;
+
     await Promise.all(
       this.sessions.map(async (session) => {
         const member = await matchMakeGuild.members.fetch(session.user.id);
@@ -322,6 +335,12 @@ class MatchMakingSession {
     };
   }
 
+  async rerender() {
+    if (!this.message) return;
+    const message = await this.buildMessage();
+    await this.message.edit(message);
+  }
+
   buildCancelMessage() {
     return {
       embeds: [
@@ -344,19 +363,8 @@ class MatchMakingSession {
     };
   }
 
-  async rerender() {
-    if (!this.message) return;
-    const message = await this.buildMessage();
-    await this.message.edit(message);
-  }
-
   async onCanceled() {
-    const message = await (this.message
-      ? this.message.edit(this.buildCancelMessage())
-      : getDMChannel(this.user).then((channel) =>
-          channel.send(this.buildCancelMessage()),
-        ));
-
+    const message = await this.message!.edit(this.buildCancelMessage());
     const buttonInteraction = await message.awaitMessageComponent({
       componentType: ComponentType.Button,
     });
@@ -365,7 +373,7 @@ class MatchMakingSession {
       case "rematch_button":
         this.context.matchMaker.handleMatchButton(
           buttonInteraction,
-          idMap[this.context.type],
+          (this.context.type + "_match_button") as any,
         );
         break;
       case "cancel_rematch_button":
