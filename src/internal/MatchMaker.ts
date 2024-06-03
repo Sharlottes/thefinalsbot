@@ -12,24 +12,29 @@ import {
 import { Discord, On } from "discordx";
 
 const MAX_MATCH = 2;
-type MatchMakingType = "general" | "rank1" | "rank2";
 const keyMap = {
   general: "일반전",
-  rank1: "브실골 경쟁전",
-  rank2: "플다 경쟁전",
+  rank: "경쟁전",
+  free: "자유방",
 } as const;
+type MatchMakingType = "general" | "rank" | "free";
+interface FreeVoiceChannelData {
+  channel: Discord.VoiceChannel;
+  latestBlankTimer: NodeJS.Timeout;
+}
 
 @Discord()
 export default class MatchMaker {
   #matchMakingMessage!: Discord.Message;
   waitingChannel!: Discord.VoiceBasedChannel;
 
+  public readonly freeVoiceChannels = new Set<FreeVoiceChannelData>();
   public readonly matchContextes = new Set<MatchMakingContext>();
   public readonly matchingUsers = new Set<string>();
   public readonly matchQueue: Record<MatchMakingType, Discord.User[]> = {
     general: [],
-    rank1: [],
-    rank2: [],
+    rank: [],
+    free: [],
   };
   get matchMakingMessage() {
     return this.#matchMakingMessage;
@@ -104,6 +109,18 @@ export default class MatchMaker {
           this.matchContextes.delete(context);
         }
       });
+
+      this.freeVoiceChannels.forEach(async (data) => {
+        if (data.channel.members.size === 0) {
+          clearTimeout(data.latestBlankTimer);
+          data.latestBlankTimer = setTimeout(
+            () => this.handleFreeVoiceChannelTimeout(data),
+            1000 * 60 * 5,
+          );
+        } else {
+          clearTimeout(data.latestBlankTimer);
+        }
+      });
     }
   }
 
@@ -128,38 +145,62 @@ export default class MatchMaker {
     this.handleMatchButton(interaction, interaction.customId as any);
   }
 
+  async handleFreeVoiceChannelTimeout(data: FreeVoiceChannelData) {
+    this.freeVoiceChannels.delete(data);
+    await data.channel.delete();
+  }
+
   async handleMatchButton(
     interaction: Discord.RepliableInteraction,
     interactionId:
       | "cancel_button"
       | "general_match_button"
-      | "rank1_match_button"
-      | "rank2_match_button",
+      | "rank_match_button"
+      | "free_match_button",
   ) {
     this.cancelMatch(interaction.user.id);
-    // 취소 시 그냥 스킵
-    if (interactionId !== "cancel_button") {
-      const queueType = interactionId.replace(
-          "_match_button",
-          "",
-        ) as MatchMakingType,
-        queueTypeName = keyMap[queueType];
-      this.matchQueue[queueType].push(interaction.user);
-      this.matchingUsers.add(interaction.user.id);
-      autoDeleteMessage(
-        interaction.reply({
-          content: `${bold(queueTypeName)} 매치메이킹을 시작합니다...`,
+    switch (interactionId) {
+      case "cancel_button":
+        autoDeleteMessage(
+          interaction.reply({
+            content: `매치메이킹을 취소했습니다`,
+            ephemeral: true,
+          }),
+        );
+        break;
+      case "free_match_button":
+        const voiceChannel = await this.crateRoom("free");
+        await interaction.reply({
+          content: `자유방이 생성되었습니다. 
+[바로가기](discord://-/channels/${voiceChannel.guildId}/${voiceChannel.id})`,
           ephemeral: true,
-        }),
-      );
-    } else {
-      autoDeleteMessage(
-        interaction.reply({
-          content: `매치메이킹을 취소했습니다`,
-          ephemeral: true,
-        }),
-      );
+        });
+        const data: FreeVoiceChannelData = {
+          channel: voiceChannel,
+          latestBlankTimer: setTimeout(
+            () => this.handleFreeVoiceChannelTimeout(data),
+            1000 * 60 * 5,
+          ),
+        };
+        this.freeVoiceChannels.add(data);
+
+        break;
+      default:
+        const queueType = interactionId.replace(
+            "_match_button",
+            "",
+          ) as MatchMakingType,
+          queueTypeName = keyMap[queueType];
+        this.matchQueue[queueType].push(interaction.user);
+        this.matchingUsers.add(interaction.user.id);
+        autoDeleteMessage(
+          interaction.reply({
+            content: `${bold(queueTypeName)} 매치메이킹을 시작합니다...`,
+            ephemeral: true,
+          }),
+        );
     }
+
     await this.rerender();
     await this.validateMatch();
     await this.rerender();
@@ -180,37 +221,23 @@ export default class MatchMaker {
 ${bold("대기자 수")}`,
           )
           .setFields(
-            {
-              name: "일반전",
-              value: this.matchQueue.general.length + "명",
-              inline: true,
-            },
-            {
-              name: "브실골 경쟁전",
-              value: this.matchQueue.rank1.length + "명",
-              inline: true,
-            },
-            {
-              name: "플다 경쟁전",
-              value: this.matchQueue.rank2.length + "명",
-              inline: true,
-            },
+            Object.entries(keyMap)
+              .filter(([k, v]) => k !== "free")
+              .map(([key, value]) => ({
+                name: value,
+                value: this.matchQueue[key as MatchMakingType].length + "명",
+                inline: true,
+              })),
           ),
       ],
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setCustomId("general_match_button")
-            .setLabel("일반전")
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId("rank1_match_button")
-            .setLabel("브실골 경쟁전")
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId("rank2_match_button")
-            .setLabel("플다 경쟁전")
-            .setStyle(ButtonStyle.Primary),
+          ...Object.entries(keyMap).map(([key, value]) =>
+            new ButtonBuilder()
+              .setCustomId(`${key}_match_button`)
+              .setLabel(value)
+              .setStyle(ButtonStyle.Primary),
+          ),
           new ButtonBuilder()
             .setCustomId("cancel_button")
             .setLabel("취소")
@@ -243,6 +270,16 @@ ${bold("대기자 수")}`,
       context.sessions.forEach((session) => session.init());
     }
   }
+
+  async crateRoom(type: MatchMakingType) {
+    const matchMakeGuild = this.matchMakingMessage.guild!;
+    const voiceChannel = await matchMakeGuild.channels.create({
+      type: ChannelType.GuildVoice,
+      name: `${keyMap[type]} 매치메이킹`,
+      parent: process.env.MATCHMAKED_ROOM_CATEGORY_ID,
+    });
+    return voiceChannel;
+  }
 }
 
 class MatchMakingContext {
@@ -255,17 +292,15 @@ class MatchMakingContext {
   ) {}
 
   async createRoom() {
-    const matchMakeGuild = this.matchMaker.matchMakingMessage.guild!;
-    const voiceChannel = await matchMakeGuild.channels.create({
-      type: ChannelType.GuildVoice,
-      name: `${keyMap[this.type]} 매치메이킹`,
-      parent: process.env.MATCHMAKED_ROOM_CATEGORY_ID,
-    });
+    const voiceChannel = await this.matchMaker.crateRoom(this.type);
     this.voiceChannel = voiceChannel;
 
     await Promise.all(
       this.sessions.map(async (session) => {
-        const member = await matchMakeGuild.members.fetch(session.user.id);
+        const member =
+          await this.matchMaker.matchMakingMessage.guild!.members.fetch(
+            session.user.id,
+          );
         member.voice.setChannel(voiceChannel);
       }),
     );
@@ -288,9 +323,7 @@ class MatchMakingSession {
     this.message.delete();
     if (buttonInteraction.customId == "cancel_voice_channel") {
       autoDeleteMessage(buttonInteraction.reply("취소되었습니다."));
-      this.context.sessions.forEach((session) => {
-        if (session.user.id !== this.user.id) session.onCanceled();
-      });
+      this.context.sessions.forEach((session) => session.onCanceled());
     }
   }
 
@@ -311,24 +344,25 @@ class MatchMakingSession {
 
     return {
       embeds: [
-        new EmbedBuilder().setTitle("매치메이킹 준비 중...").setDescription(
+        new EmbedBuilder().setTitle("매치메이킹 하는중...").setDescription(
           `
-* 매치메이킹을 위한 인원이 모두 모였습니다.
-* 디소코드의 개인 보안으로 인해 <#${process.env.MATCHMAKING_WAITING_CHANNEL_ID}>에 먼저 입장해야 합니다.
+* 모드: ${keyMap[this.context.type]}
+* 모집인원: ~${MAX_MATCH}인
+* 디소코드의 개인 보안으로 인해 ⁠THE FINALS TEAMS ⁠대기실에 먼저 입장해야 합니다.
 * 현재 대기 중인 팀원:` + usersStr,
         ),
       ],
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
-            .setLabel("음성 채널 입장")
+            .setLabel("대기실 입장")
             .setURL(
               `discord://-/channels/${this.context.matchMaker.waitingChannel.guildId}/${this.context.matchMaker.waitingChannel.id}`,
             )
             .setStyle(ButtonStyle.Link),
           new ButtonBuilder()
             .setCustomId("cancel_voice_channel")
-            .setLabel("취소")
+            .setLabel("매칭 취소")
             .setStyle(ButtonStyle.Secondary),
         ),
       ],
@@ -352,7 +386,7 @@ class MatchMakingSession {
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId("rematch_button")
-            .setLabel("음성 채널 입장")
+            .setLabel("다시 매치메이킹 시작하기")
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId("cancel_rematch_button")
