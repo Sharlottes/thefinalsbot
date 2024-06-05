@@ -49,7 +49,7 @@ export const client = new Client({
 });
 console.log("start initing");
 await importx(
-  `${dirname(import.meta.url)}/internal/**/*.{ts,js}`,
+  `${dirname(import.meta.url)}/core/**/*.{ts,js}`,
   `${dirname(import.meta.url)}/discord/{events,command}/**/*.{ts,js}`,
 );
 console.log("done, start login");

@@ -18,7 +18,7 @@ import {
   inlineCode,
 } from "discord.js";
 import throwInteraction from "@/utils/throwInteraction";
-import ProfileRegister from "@/internal/ProfileRegister";
+import ProfileRegister from "@/core/ProfileRegister";
 import UserModel from "@/models/UserModel";
 
 @SlashGroup({
