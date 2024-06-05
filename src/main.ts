@@ -50,7 +50,7 @@ export const client = new Client({
 console.log("start initing");
 await importx(
   `${dirname(import.meta.url)}/core/**/*.{ts,js}`,
-  `${dirname(import.meta.url)}/discord/{events,command}/**/*.{ts,js}`,
+  `${dirname(import.meta.url)}/discord/{features,command}/**/*.{ts,js}`,
 );
 console.log("done, start login");
 await client.login(process.env.TOKEN);

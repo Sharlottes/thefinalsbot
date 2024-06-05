@@ -3,7 +3,7 @@ import { DIService, Discord, On } from "discordx";
 import mongoose from "mongoose";
 
 @Discord()
-export default class Event {
+export default class BotInitalizer {
   @On({ event: "ready" })
   private async ready(
     _: DiscordX.ArgsOf<"ready">,
@@ -36,9 +36,8 @@ export default class Event {
         "client.user does not exist when interaction is created.",
       );
     }
-    if (client.user.presence.status == "online") {
-      client.executeInteraction(interaction);
-    }
+
+    client.executeInteraction(interaction);
   }
 
   @On({ event: "messageCreate" })
@@ -49,8 +48,7 @@ export default class Event {
     if (!client.user) {
       throw new Error("client.user does not exist when message is created.");
     }
-    if (client.user.presence.status == "online") {
-      client.executeCommand(message);
-    }
+
+    client.executeCommand(message);
   }
 }

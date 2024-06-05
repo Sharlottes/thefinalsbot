@@ -10,8 +10,8 @@ import {
   bold,
 } from "discord.js";
 import { Discord, On } from "discordx";
-import FixedMessageRegister from "./FixedMessageRegister";
-import VoiceChannelManager from "./VoiceChannelManager";
+import FixedMessageRegister from "../../core/FixedMessageRegister";
+import VoiceChannelManager from "../../core/VoiceChannelManager";
 
 const MAX_MATCH = 2;
 const keyMap = {
