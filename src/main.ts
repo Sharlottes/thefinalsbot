@@ -6,6 +6,11 @@ import { Client, DIService, tsyringeDependencyRegistryEngine } from "discordx";
 import { container, instanceCachingFactory } from "tsyringe";
 import { dirname, importx } from "@discordx/importer";
 import * as Discord from "discord.js";
+import Vars from "./Vars";
+import MatchMaker from "./discord/features/MatchMaker";
+import RoomsMaker from "./discord/features/RoomsMaker";
+import FixedMessageModel from "./models/FixedMessagesModel";
+import FixedMessageRegister from "./core/FixedMessageRegister";
 
 process
   .on("unhandledRejection", (err) => {
@@ -47,11 +52,17 @@ export const client = new Client({
   ],
   botGuilds: [process.env.TEST_GUILD_ID],
 });
-console.log("start initing");
+
+console.time("importing...");
 await importx(
   `${dirname(import.meta.url)}/core/**/*.{ts,js}`,
   `${dirname(import.meta.url)}/discord/{features,commands}/**/*.{ts,js}`,
 );
-console.log("done, start login");
+console.timeEnd("importing...");
+
+console.time("bot login...");
 await client.login(process.env.TOKEN);
-console.log("done");
+console.timeEnd("bot login...");
+await Vars.init(client);
+await FixedMessageRegister.main.init();
+await Promise.all([MatchMaker.main.init(), RoomsMaker.main.init()]);

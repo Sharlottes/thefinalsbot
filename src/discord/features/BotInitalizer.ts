@@ -1,14 +1,16 @@
 import { ActivityType } from "discord.js";
-import { DIService, Discord, On } from "discordx";
+import { DIService, Discord, On, Once } from "discordx";
 import mongoose from "mongoose";
 
 @Discord()
 export default class BotInitalizer {
-  @On({ event: "ready" })
+  @Once({ event: "ready" })
   private async ready(
     _: DiscordX.ArgsOf<"ready">,
     client: DiscordX.Client,
   ): Promise<void> {
+    console.time("initalizing BotInitalizer...");
+
     await mongoose.connect(process.env.MONGO_URL);
     DIService.engine.getAllServices();
     await client.initApplicationCommands();
@@ -24,6 +26,7 @@ export default class BotInitalizer {
       `Commands are all registered, total: ${client.applicationCommands.length}`,
     );
     console.log(`Bot ${client.user?.tag} ready`);
+    console.timeEnd("initalizing BotInitalizer...");
   }
 
   @On({ event: "interactionCreate" })

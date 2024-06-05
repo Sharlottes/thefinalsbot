@@ -1,6 +1,6 @@
 import { ChannelType } from "discord.js";
-import { Discord, On } from "discordx";
-import Vars from "./Vars";
+import { Discord, On, Once } from "discordx";
+import Vars from "../Vars";
 
 interface VoiceChannelData {
   channel: Discord.VoiceChannel;
@@ -12,12 +12,6 @@ interface VoiceChannelData {
 export default class VoiceChannelManager {
   private static readonly voiceChannels: Map<string, VoiceChannelData> =
     new Map();
-
-  @On({ event: "ready" })
-  async onReady(
-    _: DiscordX.ArgsOf<"ready">,
-    client: DiscordX.Client,
-  ): Promise<void> {}
 
   @On({ event: "voiceStateUpdate" })
   async onVoiceStateUpdate([
@@ -50,7 +44,7 @@ export default class VoiceChannelManager {
 
   public static async createVoiceChannel(
     name: string,
-    removeTime = 1000 * 5,
+    removeTime = 1000 * 7,
     parent: Discord.CategoryChannelResolvable = process.env
       .MATCHMAKED_ROOM_CATEGORY_ID,
   ) {
