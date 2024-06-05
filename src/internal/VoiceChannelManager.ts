@@ -1,0 +1,73 @@
+import { ChannelType } from "discord.js";
+import { Discord, On } from "discordx";
+import Vars from "./Vars";
+
+interface VoiceChannelData {
+  channel: Discord.VoiceChannel;
+  latestBlankTimer: NodeJS.Timeout;
+  removeTime: number;
+}
+
+@Discord()
+export default class VoiceChannelManager {
+  private static readonly voiceChannels: Map<string, VoiceChannelData> =
+    new Map();
+
+  @On({ event: "ready" })
+  async onReady(
+    _: DiscordX.ArgsOf<"ready">,
+    client: DiscordX.Client,
+  ): Promise<void> {}
+
+  @On({ event: "voiceStateUpdate" })
+  async onVoiceStateUpdate([
+    oldState,
+    newState,
+  ]: DiscordX.ArgsOf<"voiceStateUpdate">) {
+    this.validateChannel(oldState.channel);
+    this.validateChannel(newState.channel);
+  }
+
+  private validateChannel(channel?: Discord.VoiceBasedChannel | null) {
+    if (channel?.type !== ChannelType.GuildVoice) return;
+
+    const data = VoiceChannelManager.voiceChannels.get(channel.id);
+    if (!data) return;
+
+    clearTimeout(data.latestBlankTimer);
+    if (channel.members.size !== 0) return;
+
+    data.latestBlankTimer = setTimeout(
+      () => VoiceChannelManager.handleChannelTimeout(data),
+      data.removeTime,
+    );
+  }
+
+  private static handleChannelTimeout(data: VoiceChannelData) {
+    VoiceChannelManager.voiceChannels.delete(data.channel.id);
+    data.channel.delete();
+  }
+
+  public static async createVoiceChannel(
+    name: string,
+    removeTime = 1000 * 5,
+    parent: Discord.CategoryChannelResolvable = process.env
+      .MATCHMAKED_ROOM_CATEGORY_ID,
+  ) {
+    const channel = await Vars.mainGuild.channels.create({
+      type: ChannelType.GuildVoice,
+      name,
+      parent,
+    });
+    const data: VoiceChannelData = {
+      channel,
+      removeTime,
+      latestBlankTimer: setTimeout(
+        () => this.handleChannelTimeout(data),
+        removeTime,
+      ),
+    };
+    this.voiceChannels.set(channel.id, data);
+    return channel;
+  }
+}

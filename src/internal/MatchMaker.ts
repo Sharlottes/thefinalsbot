@@ -10,6 +10,8 @@ import {
   bold,
 } from "discord.js";
 import { Discord, On } from "discordx";
+import FixedMessageRegister from "./FixedMessageRegister";
+import VoiceChannelManager from "./VoiceChannelManager";
 
 const MAX_MATCH = 2;
 const keyMap = {
@@ -18,17 +20,12 @@ const keyMap = {
   free: "자유방",
 } as const;
 type MatchMakingType = "general" | "rank" | "free";
-interface FreeVoiceChannelData {
-  channel: Discord.VoiceChannel;
-  latestBlankTimer: NodeJS.Timeout;
-}
 
 @Discord()
 export default class MatchMaker {
   #matchMakingMessage!: Discord.Message;
   waitingChannel!: Discord.VoiceBasedChannel;
 
-  public readonly freeVoiceChannels = new Set<FreeVoiceChannelData>();
   public readonly matchContextes = new Set<MatchMakingContext>();
   public readonly matchingUsers = new Set<string>();
   public readonly matchQueue: Record<MatchMakingType, Discord.User[]> = {
@@ -61,7 +58,10 @@ export default class MatchMaker {
       throw new Error("CHANNEL IS NOT TEXT BASED");
     const messages = await channel.messages.fetch();
     await Promise.all(messages.map((message) => message.delete()));
-    this.#matchMakingMessage = await channel.send("waiting...");
+    this.#matchMakingMessage = await FixedMessageRegister.sendMessage(
+      channel,
+      "waiting...",
+    );
     await this.rerender();
   }
 
@@ -102,38 +102,7 @@ export default class MatchMaker {
       }
       await Promise.all(promises);
       await this.rerender();
-    } else {
-      this.matchContextes.forEach(async (context) => {
-        if (context.voiceChannel?.members.size === 0) {
-          await context.voiceChannel.delete();
-          this.matchContextes.delete(context);
-        }
-      });
-
-      this.freeVoiceChannels.forEach(async (data) => {
-        if (data.channel.members.size === 0) {
-          clearTimeout(data.latestBlankTimer);
-          data.latestBlankTimer = setTimeout(
-            () => this.handleFreeVoiceChannelTimeout(data),
-            1000 * 60 * 5,
-          );
-        } else {
-          clearTimeout(data.latestBlankTimer);
-        }
-      });
     }
-  }
-
-  @On({ event: "messageCreate" })
-  async onMessageCreate([message]: DiscordX.ArgsOf<"messageCreate">) {
-    if (
-      message.channel.id !== process.env.MATCHMAKING_ANNOUNCE_CHANNEL_ID ||
-      message.author.bot
-    ) {
-      return;
-    }
-
-    message.delete();
   }
 
   @On({ event: "interactionCreate" })
@@ -143,11 +112,6 @@ export default class MatchMaker {
     if (!interaction.isButton()) return;
     if (interaction.message.id !== this.#matchMakingMessage.id) return;
     this.handleMatchButton(interaction, interaction.customId as any);
-  }
-
-  async handleFreeVoiceChannelTimeout(data: FreeVoiceChannelData) {
-    this.freeVoiceChannels.delete(data);
-    await data.channel.delete();
   }
 
   async handleMatchButton(
@@ -169,21 +133,15 @@ export default class MatchMaker {
         );
         break;
       case "free_match_button":
-        const voiceChannel = await this.crateRoom("free");
+        const voiceChannel = await VoiceChannelManager.createVoiceChannel(
+          `${keyMap.free} 매치메이킹`,
+          1000 * 7,
+        );
         await interaction.reply({
           content: `자유방이 생성되었습니다. 
 [바로가기](discord://-/channels/${voiceChannel.guildId}/${voiceChannel.id})`,
           ephemeral: true,
         });
-        const data: FreeVoiceChannelData = {
-          channel: voiceChannel,
-          latestBlankTimer: setTimeout(
-            () => this.handleFreeVoiceChannelTimeout(data),
-            1000 * 60 * 5,
-          ),
-        };
-        this.freeVoiceChannels.add(data);
-
         break;
       default:
         const queueType = interactionId.replace(
@@ -270,16 +228,6 @@ ${bold("대기자 수")}`,
       context.sessions.forEach((session) => session.init());
     }
   }
-
-  async crateRoom(type: MatchMakingType) {
-    const matchMakeGuild = this.matchMakingMessage.guild!;
-    const voiceChannel = await matchMakeGuild.channels.create({
-      type: ChannelType.GuildVoice,
-      name: `${keyMap[type]} 매치메이킹`,
-      parent: process.env.MATCHMAKED_ROOM_CATEGORY_ID,
-    });
-    return voiceChannel;
-  }
 }
 
 class MatchMakingContext {
@@ -292,7 +240,9 @@ class MatchMakingContext {
   ) {}
 
   async createRoom() {
-    const voiceChannel = await this.matchMaker.crateRoom(this.type);
+    const voiceChannel = await VoiceChannelManager.createVoiceChannel(
+      `${keyMap[this.type]} 매치메이킹`,
+    );
     this.voiceChannel = voiceChannel;
 
     await Promise.all(

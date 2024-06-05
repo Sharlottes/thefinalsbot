@@ -26,7 +26,6 @@ process
       err,
     );
   });
-
 dotenv.config();
 
 DIService.engine = tsyringeDependencyRegistryEngine
