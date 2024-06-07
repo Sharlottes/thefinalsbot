@@ -14,7 +14,7 @@ import FixedMessageRegister from "../../core/FixedMessageRegister";
 import VoiceChannelManager from "../../core/VoiceChannelManager";
 import Vars from "@/Vars";
 
-const MAX_MATCH = 2;
+const MAX_MATCH = 3;
 const keyMap = {
   general: "일반전",
   rank: "경쟁전",
