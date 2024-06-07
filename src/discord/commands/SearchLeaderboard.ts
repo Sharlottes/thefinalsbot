@@ -1,10 +1,11 @@
-import type { LeaderBoardUserData, LeaderboardData } from "@/@types/searchData";
+import type { LeaderBoardUserData, LeaderboardData, leaderboardConstructor } from "@/@types/searchData";
 import {
   ActionRowBuilder,
   ApplicationCommandOptionType,
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
+  ComponentType,
   EmbedBuilder,
 } from "discord.js";
 import { ButtonComponent, Slash, SlashOption, Discord } from "discordx";
@@ -14,22 +15,10 @@ import { injectable } from "tsyringe";
 @Discord()
 @injectable()
 export default class SearchLeaderboard {
-  page: number;
-  leaderboard: LeaderboardData | undefined;
+  data: Map<string, leaderboardConstructor>;
 
   constructor() {
-    this.page = 0;
-  }
-
-  @ButtonComponent({ id: /^page_count_-?\d+$/ })
-  async button(interaction: ButtonInteraction) {
-    this.page += Number(interaction.customId.replaceAll("page_count_", ""));
-    const data = this.getLeaderBoardData();
-
-    await interaction.update({
-      embeds: [this.getEmbed()],
-      components: [this.getPageButton()],
-    });
+    this.data = new Map();
   }
 
   @Slash({
@@ -63,16 +52,51 @@ export default class SearchLeaderboard {
       return;
     }
 
-    this.leaderboard = (await result.data) as LeaderboardData;
+    // initialize interaction data.
+    const id = interaction.id;
+    this.data.set(id, {
+        page: 0,
+        leaderboard: (await result.data) as LeaderboardData
+    })
 
-    if (this.leaderboard.count === 0) {
+    if (this.data.get(id)?.leaderboard?.count === 0) {
       interaction.editReply("검색 결과가 없습니다 (ㅠ ㅠ)");
+
+      this.data.delete(id); // destory interaction data.
       return;
     }
 
+    // collectors
     const response = await interaction.editReply({
-      embeds: [this.getEmbed()],
-      components: [this.getPageButton()],
+      embeds: [this.getEmbed(id)],
+      components: [this.getPageButton(id)],
+    });
+
+    const collector = response.createMessageComponentCollector({
+      filter: (i) => i.user.id === interaction.user.id,
+      componentType: ComponentType.Button,
+      idle: 20_000,
+    });
+
+    collector.on("collect", async (collected_interaction) => {
+      let nowPage = this.data.get(interaction.id)?.page || 0;
+      nowPage += Number(collected_interaction.customId.replaceAll("page_count_", ""));
+
+      // update Page
+      this.data.set(id, {
+        page: nowPage,
+        leaderboard: this.data.get(id)?.leaderboard
+      }) 
+
+      await collected_interaction.update({
+        embeds: [this.getEmbed(id)],
+        components: [this.getPageButton(id)],
+      });
+    });
+
+    collector.on("end", async () => {
+      this.data.delete(id);
+      await interaction.editReply({ components: [] });
     });
   }
 
@@ -81,9 +105,10 @@ export default class SearchLeaderboard {
    *
    * @returns @typs {LeaderBoardUserData}
    */
-  getLeaderBoardData(): LeaderBoardUserData {
+  getLeaderBoardData(id: string): LeaderBoardUserData {
+    const data = this.data.get(id);
     return (
-      this.leaderboard?.data?.[this.page] || {
+        data?.leaderboard?.data?.[data.page] || {
         rank: -1,
         change: 0,
         leagueNumber: 0,
@@ -102,8 +127,8 @@ export default class SearchLeaderboard {
    *
    * @returns @typs {EmbedBuilder}
    */
-  getEmbed(): EmbedBuilder {
-    const data = this.getLeaderBoardData();
+  getEmbed(id: string): EmbedBuilder {
+    const data = this.getLeaderBoardData(id);
     const rank_color = [0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8];
 
     return new EmbedBuilder()
@@ -136,10 +161,11 @@ export default class SearchLeaderboard {
    *
    * @returns @typs {ActionRowBuilder<ButtonBuilder>}
    */
-  getPageButton(): ActionRowBuilder<ButtonBuilder> {
+  getPageButton(id: string): ActionRowBuilder<ButtonBuilder> {
+    const data = this.data.get(id);
     const page_count = new ButtonBuilder()
       .setCustomId("page_count")
-      .setLabel(`${this.page + 1} / ${this.leaderboard?.count}`)
+      .setLabel(`${(data?.page || 0) + 1} / ${data?.leaderboard?.count}`)
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(true /*page_length === 1*/);
 
@@ -165,9 +191,9 @@ export default class SearchLeaderboard {
           .setStyle(ButtonStyle.Primary)
           .setEmoji(btn_symbols[i].symbol)
           .setDisabled(
-            this.page + btn_symbols[i].page < 0 ||
-              this.page + btn_symbols[i].page >
-                (this.leaderboard?.count || 0) - 1,
+            (data?.page || 0) + btn_symbols[i].page < 0 ||
+              (data?.page || 0) + btn_symbols[i].page >
+                (data?.leaderboard?.count || 0) - 1,
           ),
       );
     }

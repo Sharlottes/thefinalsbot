@@ -12,6 +12,11 @@ export interface LeaderboardMeta {
   returnCountOnly: boolean;
 }
 
+export interface leaderboardConstructor {
+    page: number,
+    leaderboard?: LeaderboardData
+}
+
 export interface LeaderBoardUserData {
   rank: number;
   change: number;
