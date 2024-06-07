@@ -5,12 +5,7 @@ import {
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
-  ComponentType,
   EmbedBuilder,
-  ModalBuilder,
-  ModalSubmitInteraction,
-  TextInputBuilder,
-  TextInputStyle,
 } from "discord.js";
 import { ButtonComponent, Slash, SlashOption, Discord } from "discordx";
 import { StatusCodes } from "http-status-codes";
@@ -26,7 +21,7 @@ export default class SearchLeaderboard {
     this.page = 0;
   }
 
-  @ButtonComponent({ id: "^page_count_-?d+$" })
+  @ButtonComponent({ id: /^page_count_-?\d+$/ })
   async button(interaction: ButtonInteraction) {
     this.page += Number(interaction.customId.replaceAll("page_count_", ""));
     const data = this.getLeaderBoardData();
