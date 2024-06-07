@@ -13,8 +13,8 @@ export interface LeaderboardMeta {
 }
 
 export interface leaderboardConstructor {
-    page: number,
-    leaderboard?: LeaderboardData
+  page: number;
+  leaderboard?: LeaderboardData;
 }
 
 export interface LeaderBoardUserData {

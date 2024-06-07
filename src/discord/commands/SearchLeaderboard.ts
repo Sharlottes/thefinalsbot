@@ -1,4 +1,8 @@
-import type { LeaderBoardUserData, LeaderboardData, leaderboardConstructor } from "@/@types/searchData";
+import type {
+  LeaderBoardUserData,
+  LeaderboardData,
+  leaderboardConstructor,
+} from "@/@types/searchData";
 import {
   ActionRowBuilder,
   ApplicationCommandOptionType,
@@ -55,9 +59,9 @@ export default class SearchLeaderboard {
     // initialize interaction data.
     const id = interaction.id;
     this.data.set(id, {
-        page: 0,
-        leaderboard: (await result.data) as LeaderboardData
-    })
+      page: 0,
+      leaderboard: (await result.data) as LeaderboardData,
+    });
 
     if (this.data.get(id)?.leaderboard?.count === 0) {
       interaction.editReply("검색 결과가 없습니다 (ㅠ ㅠ)");
@@ -80,13 +84,15 @@ export default class SearchLeaderboard {
 
     collector.on("collect", async (collected_interaction) => {
       let nowPage = this.data.get(interaction.id)?.page || 0;
-      nowPage += Number(collected_interaction.customId.replaceAll("page_count_", ""));
+      nowPage += Number(
+        collected_interaction.customId.replaceAll("page_count_", ""),
+      );
 
       // update Page
       this.data.set(id, {
         page: nowPage,
-        leaderboard: this.data.get(id)?.leaderboard
-      }) 
+        leaderboard: this.data.get(id)?.leaderboard,
+      });
 
       await collected_interaction.update({
         embeds: [this.getEmbed(id)],
@@ -108,7 +114,7 @@ export default class SearchLeaderboard {
   getLeaderBoardData(id: string): LeaderBoardUserData {
     const data = this.data.get(id);
     return (
-        data?.leaderboard?.data?.[data.page] || {
+      data?.leaderboard?.data?.[data.page] || {
         rank: -1,
         change: 0,
         leagueNumber: 0,
