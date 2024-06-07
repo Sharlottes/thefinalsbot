@@ -2,6 +2,7 @@ export default class Vars {
   static client: DiscordX.Client;
   static mainGuild: Discord.Guild;
   static roomMakingChannels: Discord.TextChannel[] = [];
+  static dmLogChannel: Discord.TextChannel;
 
   public static async init(client: DiscordX.Client): Promise<void> {
     Vars.client = client;
@@ -11,5 +12,9 @@ export default class Vars {
         Vars.mainGuild.channels.fetch(id),
       ),
     )) as Discord.TextChannel[];
+
+    Vars.dmLogChannel = (await client.channels.fetch(
+      process.env.DM_LOG_CHANNEL_ID,
+    )) as Discord.TextChannel;
   }
 }
