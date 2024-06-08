@@ -5,11 +5,10 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ChannelType,
   ComponentType,
   bold,
 } from "discord.js";
-import { Discord, On, Once } from "discordx";
+import { Discord, On } from "discordx";
 import FixedMessageRegister from "../../core/FixedMessageRegister";
 import VoiceChannelManager from "../../core/VoiceChannelManager";
 import Vars from "@/Vars";
@@ -25,7 +24,6 @@ type MatchMakingType = "general" | "rank" | "free";
 @Discord()
 export default class MatchMaker {
   #matchMakingMessage?: Discord.Message;
-  waitingChannel?: Discord.VoiceBasedChannel;
 
   public readonly matchContextes = new Set<MatchMakingContext>();
   public readonly matchingUsers = new Set<string>();
@@ -46,21 +44,8 @@ export default class MatchMaker {
   public async init(): Promise<void> {
     console.time("initalizing MatchMaker...");
 
-    const waitingChannel = await Vars.mainGuild.channels.fetch(
-      process.env.MATCHMAKING_WAITING_CHANNEL_ID,
-    );
-    if (!waitingChannel?.isVoiceBased())
-      throw new Error("WAITING CHANNEL IS NOT FOUND OR NOT VOICE BASED");
-    this.waitingChannel = waitingChannel;
-
-    const channel = await Vars.mainGuild.channels.fetch(
-      process.env.MATCHMAKING_ANNOUNCE_CHANNEL_ID,
-    );
-    if (!channel) throw new Error("CANNOT FIND MATCHMAKING CHANNEL");
-    if (channel.type !== ChannelType.GuildText)
-      throw new Error("CHANNEL IS NOT TEXT BASED");
     this.#matchMakingMessage = await FixedMessageRegister.sendMessage(
-      channel,
+      Vars.matchMakingAnnounceChannel,
       "waiting...",
     );
     await this.rerender();
@@ -74,15 +59,15 @@ export default class MatchMaker {
     newState,
   ]: DiscordX.ArgsOf<"voiceStateUpdate">) {
     if (
-      oldState.guild.id !== this.waitingChannel?.guildId &&
-      newState.guild.id !== this.waitingChannel?.guildId
+      oldState.guild.id !== Vars.matchMakingWaitingChannel?.guildId &&
+      newState.guild.id !== Vars.matchMakingWaitingChannel?.guildId
     ) {
       return;
     }
 
     if (
-      oldState.channelId === this.waitingChannel.id ||
-      newState.channelId === this.waitingChannel.id
+      oldState.channelId === Vars.matchMakingWaitingChannel.id ||
+      newState.channelId === Vars.matchMakingWaitingChannel.id
     ) {
       const promises: Promise<unknown>[] = [];
 
@@ -282,7 +267,7 @@ class MatchMakingSession {
   }
 
   async isJoined() {
-    const channel = await this.context.matchMaker.waitingChannel?.fetch();
+    const channel = await Vars.matchMakingWaitingChannel?.fetch();
     return !!channel?.members.has(this.user.id);
   }
 
@@ -311,7 +296,7 @@ class MatchMakingSession {
           new ButtonBuilder()
             .setLabel("대기실 입장")
             .setURL(
-              `discord://-/channels/${this.context.matchMaker.waitingChannel?.guildId}/${this.context.matchMaker.waitingChannel?.id}`,
+              `discord://-/channels/${Vars.matchMakingWaitingChannel?.guildId}/${Vars.matchMakingWaitingChannel?.id}`,
             )
             .setStyle(ButtonStyle.Link),
           new ButtonBuilder()
