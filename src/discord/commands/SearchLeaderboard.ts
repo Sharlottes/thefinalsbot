@@ -154,7 +154,7 @@ export default class SearchLeaderboard {
         // { name: "\u200B", value: "\u200B" },
         {
           name: "랭크",//" ═══•°• 랭크 •°•═══",
-          value: codeBlock(`${data.rank}`),
+          value: codeBlock(`${data.league}`),
           //inline: true,
         },
         {
