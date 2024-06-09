@@ -6,6 +6,7 @@ import type {
 import {
   ActionRowBuilder,
   ApplicationCommandOptionType,
+  AttachmentBuilder,
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
@@ -17,13 +18,11 @@ import { StatusCodes } from "http-status-codes";
 import { injectable } from "tsyringe";
 
 @Discord()
-@injectable()
 export default class SearchLeaderboard {
-  data: Map<string, leaderboardConstructor>;
+  data: Map<string, leaderboardConstructor> = new Map();
 
-  constructor() {
-    this.data = new Map();
-  }
+  // we will need an attatchment initializer
+  logo: AttachmentBuilder = new AttachmentBuilder('public/images/logo.png');
 
   @Slash({
     name: "전적검색",
@@ -74,6 +73,7 @@ export default class SearchLeaderboard {
     const response = await interaction.editReply({
       embeds: [this.getEmbed(id)],
       components: [this.getPageButton(id)],
+      files: [this.logo]
     });
 
     const collector = response.createMessageComponentCollector({
@@ -97,6 +97,7 @@ export default class SearchLeaderboard {
       await collected_interaction.update({
         embeds: [this.getEmbed(id)],
         components: [this.getPageButton(id)],
+        files: [this.logo]
       });
     });
 
@@ -142,7 +143,7 @@ export default class SearchLeaderboard {
       .setTitle(`${data.name}`/*`#${data.rank} - 『${data.name}』`*/)
       .setAuthor({
         name: `THE FINALS TEAMS`,
-        iconURL: `https://cdn.discordapp.com/avatars/1219832567570890833/889af2fc8b96fc95cf833a4395092813.webp?size=1024`,
+        iconURL: `attachment://logo.png`,
       })
       .setThumbnail(
         `https://storage.googleapis.com/embark-discovery-leaderboard/img/thumbs/${data.league.toLowerCase().replaceAll(" ", "-")}-thumb.png`,
