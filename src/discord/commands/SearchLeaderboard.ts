@@ -34,17 +34,15 @@ export default class SearchLeaderboard {
       required: true,
       type: ApplicationCommandOptionType.String,
     })
-    target: Discord.User,
+    target: string,
     interaction: Discord.ChatInputCommandInteraction,
     client: DiscordX.Client,
   ) {
     await interaction.deferReply();
-
-    let name_tag = interaction.options.getString("검색어");
-    name_tag = name_tag === "*" ? "" : name_tag; // The input * means all search.
+    target = target === "*" ? "" : target; // The input * means all search.
 
     const result = await fetch(
-      `https://api.the-finals-leaderboard.com/v1/leaderboard/s2/crossplay?name=${name_tag}`,
+      `https://api.the-finals-leaderboard.com/v1/leaderboard/s2/crossplay?name=${target}`,
     )
       .then((response) => ({ status: response.status, data: response.json() }))
       .catch((e) => console.warn(e)); // print warning and ignore.
