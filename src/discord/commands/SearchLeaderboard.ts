@@ -8,15 +8,13 @@ import {
   ApplicationCommandOptionType,
   AttachmentBuilder,
   ButtonBuilder,
-  ButtonInteraction,
   ButtonStyle,
   ComponentType,
   EmbedBuilder,
   codeBlock
 } from "discord.js";
-import { ButtonComponent, Slash, SlashOption, Discord } from "discordx";
+import { Slash, SlashOption, Discord } from "discordx";
 import { StatusCodes } from "http-status-codes";
-import { injectable } from "tsyringe";
 
 @Discord()
 export default class SearchLeaderboard {
