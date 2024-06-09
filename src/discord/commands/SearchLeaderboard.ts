@@ -12,6 +12,7 @@ import {
   ButtonStyle,
   ComponentType,
   EmbedBuilder,
+  codeBlock
 } from "discord.js";
 import { ButtonComponent, Slash, SlashOption, Discord } from "discordx";
 import { StatusCodes } from "http-status-codes";
@@ -151,18 +152,18 @@ export default class SearchLeaderboard {
       .addFields(
         {
             name: "순위", //"═════════•°• 순위 •°•═════════",
-            value: `\`\`\`${data.rank}\`\`\``,
+            value: codeBlock(`${data.rank}`),
             //inline: true
         },
         // { name: "\u200B", value: "\u200B" },
         {
           name: "랭크",//" ═══•°• 랭크 •°•═══",
-          value: `\`\`\`${data.league}\`\`\``,
+          value: codeBlock(`${data.rank}`),
           //inline: true,
         },
         {
           name: "변동",//" ══•°• 24시간 •°•══",
-          value: `\`\`\`diff\n${data.change > 0 ? "+" + data.change : data.change}\n\`\`\``,
+          value: codeBlock('diff', `${data.change > 0 ? "+" + data.change : data.change}`)
           //inline: true,
         },
       );
