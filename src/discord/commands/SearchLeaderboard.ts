@@ -139,7 +139,7 @@ export default class SearchLeaderboard {
 
     return new EmbedBuilder()
       .setColor(rank_color[Math.floor((data.leagueNumber - 1) / 4)])
-      .setTitle(`#${data.rank} - 『${data.name}』`)
+      .setTitle(`${data.name}`/*`#${data.rank} - 『${data.name}』`*/)
       .setAuthor({
         name: `THE FINALS TEAMS`,
         iconURL: `https://cdn.discordapp.com/avatars/1219832567570890833/889af2fc8b96fc95cf833a4395092813.webp?size=1024`,
@@ -148,16 +148,21 @@ export default class SearchLeaderboard {
         `https://storage.googleapis.com/embark-discovery-leaderboard/img/thumbs/${data.league.toLowerCase().replaceAll(" ", "-")}-thumb.png`,
       )
       .addFields(
-        { name: "\u200B", value: "\u200B" },
         {
-          name: " ═══•°• 랭크 •°•═══",
+            name: "순위", //"═════════•°• 순위 •°•═════════",
+            value: `\`\`\`${data.rank}\`\`\``,
+            //inline: true
+        },
+        // { name: "\u200B", value: "\u200B" },
+        {
+          name: "랭크",//" ═══•°• 랭크 •°•═══",
           value: `\`\`\`${data.league}\`\`\``,
-          inline: true,
+          //inline: true,
         },
         {
-          name: " ══•°• 24시간 •°•══",
+          name: "변동",//" ══•°• 24시간 •°•══",
           value: `\`\`\`diff\n${data.change > 0 ? "+" + data.change : data.change}\n\`\`\``,
-          inline: true,
+          //inline: true,
         },
       );
   }
