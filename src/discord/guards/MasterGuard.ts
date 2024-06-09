@@ -1,3 +1,4 @@
+import Vars from "@/Vars";
 import { NotBot } from "@discordx/utilities";
 import Discord from "discord.js";
 
@@ -28,7 +29,7 @@ const MasterGuard: DiscordX.GuardFunction<
               : argObj.message.author;
 
   if (!user) return;
-  if (process.env.MASTER_USERS.split(",").includes(user.id)) {
+  if (Vars.masterUsers.find((u) => u.id == user.id)) {
     await next();
   }
 };
