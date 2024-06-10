@@ -25,7 +25,7 @@ export default class FixedMessageRegister {
     console.time("initalizing FixedMessageRegister...");
     const messages = await FixedMessageModel.find();
     await Promise.all(
-      messages.map(async (fixedMessageData) => {
+      messages.map((fixedMessageData) =>
         Promise.all([
           Vars.mainGuild.channels
             .fetch(fixedMessageData.channelId)
@@ -38,11 +38,10 @@ export default class FixedMessageRegister {
           FixedMessageModel.deleteOne({
             messageId: fixedMessageData.messageId,
           }),
-        ]);
-      }),
-    );
-
-    console.timeEnd("initalizing FixedMessageRegister...");
+        ]),
+      ),
+    ),
+      console.timeEnd("initalizing FixedMessageRegister...");
   }
 
   public static async sendMessage(
