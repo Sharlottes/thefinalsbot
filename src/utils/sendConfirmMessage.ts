@@ -6,6 +6,7 @@ import {
   ComponentType,
 } from "discord.js";
 import onlyOwner from "./onlyOwner";
+import PColors from "@/constants/PColors";
 
 export default async function sendConfirmMessage(
   content: string | Discord.EmbedBuilder,
@@ -29,7 +30,7 @@ export default async function sendConfirmMessage(
 ): Promise<boolean | null> {
   const embed =
     typeof content === "string"
-      ? new EmbedBuilder({ description: content })
+      ? new EmbedBuilder({ description: content }).setColor(PColors.primary)
       : content;
   const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder({

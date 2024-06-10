@@ -12,6 +12,7 @@ import { Discord, On } from "discordx";
 import FixedMessageRegister from "../../core/FixedMessageRegister";
 import VoiceChannelManager from "../../core/VoiceChannelManager";
 import Vars from "@/Vars";
+import PColors from "@/constants/PColors";
 
 const MAX_MATCH = 3;
 const keyMap = {
@@ -158,6 +159,7 @@ export default class MatchMaker {
       content: null,
       embeds: [
         new EmbedBuilder()
+          .setColor(PColors.primary)
           .setTitle("매치메이커")
           .setDescription(
             `
@@ -283,13 +285,16 @@ class MatchMakingSession {
 
     return {
       embeds: [
-        new EmbedBuilder().setTitle("매치메이킹 하는중...").setDescription(
-          `
+        new EmbedBuilder()
+          .setColor(PColors.primary)
+          .setTitle("매치메이킹 하는중...")
+          .setDescription(
+            `
 * 모드: ${keyMap[this.context.type]}
 * 모집인원: ~${MAX_MATCH}인
 * 디소코드의 개인 보안으로 인해 ⁠THE FINALS TEAMS ⁠대기실에 먼저 입장해야 합니다.
 * 현재 대기 중인 팀원:` + usersStr,
-        ),
+          ),
       ],
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -317,7 +322,9 @@ class MatchMakingSession {
   buildCancelMessage() {
     return {
       embeds: [
-        new EmbedBuilder().setTitle("매치메이킹 취소됨").setDescription(`
+        new EmbedBuilder()
+          .setColor(PColors.primary)
+          .setTitle("매치메이킹 취소됨").setDescription(`
 * 누군가에 의해 매치메이킹이 취소되었습니다.
 * 다시 매치메이킹을 시작하려면 아래 버튼을 눌러주세요.`),
       ],

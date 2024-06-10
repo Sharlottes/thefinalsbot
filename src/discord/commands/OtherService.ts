@@ -1,5 +1,6 @@
 import { Slash, Discord } from "discordx";
 import { Colors, EmbedBuilder } from "discord.js";
+import PColors from "@/constants/PColors";
 
 @Discord()
 export default class OtherService {
@@ -10,7 +11,7 @@ export default class OtherService {
   ping(interaction: Discord.ChatInputCommandInteraction) {
     const ping = Date.now() - interaction.createdTimestamp;
     const embed = new EmbedBuilder()
-      .setColor(Colors.White)
+      .setColor(PColors.primary)
       .setTitle("ping: " + ping + "ms");
     interaction.reply({ embeds: [embed] });
   }

@@ -2,14 +2,14 @@ import FixedMessageRegister from "@/core/FixedMessageRegister";
 import Vars from "@/Vars";
 import VoiceChannelManager from "@/core/VoiceChannelManager";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
-import { EmbedBuilder } from "@discordjs/builders";
 import {
+  EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  Colors,
 } from "discord.js";
 import { ButtonComponent, Discord } from "discordx";
+import PColors from "@/constants/PColors";
 
 const roomEmbedDescriptions: Record<string, string> = {
   고랭크: "고랭크(플레티넘~최대) 토너먼트 파티 구인구직 가능합니다.",
@@ -44,12 +44,12 @@ export default class RoomsMaker {
     return {
       embeds: [
         new EmbedBuilder()
+          .setColor(PColors.primary)
           .setTitle(name + " 음성방 생성")
           .setDescription(
             `${roomEmbedDescriptions[name]}
 음성방을 생성하려면 아래 버튼을 눌러주세요.`,
           )
-          .setColor(Colors.Green)
           .setFooter({ text: "THE FINALS TEAMS" }),
       ],
       components: [

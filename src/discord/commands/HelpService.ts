@@ -1,5 +1,6 @@
 import { Slash, Discord, MetadataStorage } from "discordx";
 import { EmbedBuilder, inlineCode } from "discord.js";
+import PColors from "@/constants/PColors";
 
 @Discord()
 export default class HelpService {
@@ -20,7 +21,10 @@ export default class HelpService {
       )
       .join("");
 
-    const embed = new EmbedBuilder().setTitle("명령어").setDescription(fields);
+    const embed = new EmbedBuilder()
+      .setColor(PColors.primary)
+      .setTitle("명령어")
+      .setDescription(fields);
 
     interaction.reply({
       embeds: [embed],
