@@ -44,9 +44,14 @@ export default class VoiceChannelManager {
 
   public static async createVoiceChannel(
     name: string,
-    removeTime = 1000 * 7,
-    parent: Discord.CategoryChannelResolvable = process.env
-      .MATCHMAKED_ROOM_CATEGORY_ID,
+    {
+      removeTime = 1000 * 7,
+      parent = process.env.MATCHMAKED_ROOM_CATEGORY_ID,
+      owner,
+    }: CreateVoiceChannelOptions = {
+      removeTime: 1000 * 7,
+      parent: process.env.MATCHMAKED_ROOM_CATEGORY_ID,
+    },
   ) {
     const channel = await Vars.mainGuild.channels.create({
       type: ChannelType.GuildVoice,
@@ -61,7 +66,18 @@ export default class VoiceChannelManager {
         removeTime,
       ),
     };
+    if (owner) {
+      channel.permissionOverwrites.create(owner.id, {
+        Administrator: true,
+      });
+    }
     this.voiceChannels.set(channel.id, data);
     return channel;
   }
+}
+
+interface CreateVoiceChannelOptions {
+  owner?: Discord.User;
+  removeTime?: number;
+  parent?: Discord.CategoryChannelResolvable;
 }

@@ -70,7 +70,9 @@ export default class RoomsMaker {
         interaction.message.components[0]
           .components[0] as Discord.ButtonComponent
       ).label?.split(/\s/)[0] || "") + " 대화방";
-    const voiceChannel = await VoiceChannelManager.createVoiceChannel(name);
+    const voiceChannel = await VoiceChannelManager.createVoiceChannel(name, {
+      owner: interaction.user,
+    });
     await autoDeleteMessage(
       interaction.reply({
         content: `${name}이 생성되었습니다. 
