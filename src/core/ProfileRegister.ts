@@ -10,6 +10,7 @@ import throwInteraction from "@/utils/throwInteraction";
 import { contentDataset } from "@/constants/contentDataset";
 import UserModel from "@/models/UserModel";
 import { createComponents } from "@/utils/createComponent";
+import PColors from "@/constants/PColors";
 
 export default class ProfileRegister {
   profile: Profile = {
@@ -39,6 +40,7 @@ export default class ProfileRegister {
     const message = await this.interaction.editReply({
       embeds: [
         new EmbedBuilder()
+          .setColor(PColors.primary)
           .setTitle("프로필 등록에 오신 것을 환영합니다!")
           .setDescription(
             `
@@ -214,6 +216,7 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
             interaction.reply({
               embeds: [
                 new EmbedBuilder()
+                  .setColor(PColors.error)
                   .setTitle("이런!")
                   .setDescription("가젯은 총 3개만 가능합니다!")
                   .setColor(Colors.Red),

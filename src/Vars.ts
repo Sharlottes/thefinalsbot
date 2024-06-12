@@ -8,10 +8,10 @@ export default class Vars {
   static dmLogChannel: Discord.TextChannel;
   static matchMakingAnnounceChannel: Discord.TextChannel;
   static matchMakingWaitingChannel: Discord.VoiceBasedChannel;
+  static banInviteGuilds: string[];
 
   public static async init(client: DiscordX.Client): Promise<void> {
     Vars.client = client;
-
     await Promise.all([
       client.guilds
         .fetch(process.env.TEST_GUILD_ID)
@@ -41,6 +41,7 @@ export default class Vars {
         .then((c) => Vars.validateChannel(c, ChannelType.GuildText))
         .then((c) => (Vars.matchMakingAnnounceChannel = c)),
     ]);
+    Vars.banInviteGuilds = process.env.BAN_INVITE_GUILDS.split(",");
   }
 
   public static validateChannel<CT extends ChannelType>(

@@ -20,6 +20,7 @@ import {
 import throwInteraction from "@/utils/throwInteraction";
 import ProfileRegister from "@/core/ProfileRegister";
 import UserModel from "@/models/UserModel";
+import PColors from "@/constants/PColors";
 
 @SlashGroup({
   name: "프로필",
@@ -118,9 +119,9 @@ export default class UserService {
       interaction.reply({
         embeds: [
           new EmbedBuilder()
+            .setColor(PColors.error)
             .setTitle("이런!")
-            .setDescription("프로필을 모두 입력해주세요!")
-            .setColor(Colors.Red),
+            .setDescription("프로필을 모두 입력해주세요!"),
         ],
         ephemeral: true,
       });
@@ -204,9 +205,9 @@ export default class UserService {
       interaction.reply({
         embeds: [
           new EmbedBuilder()
+            .setColor(PColors.error)
             .setTitle("이런!")
-            .setDescription(battleTag + "님의 프로필이 없습니다!")
-            .setColor(Colors.Red),
+            .setDescription(battleTag + "님의 프로필이 없습니다!"),
         ],
         ephemeral: true,
       });
@@ -215,41 +216,44 @@ export default class UserService {
 
     interaction.reply({
       embeds: [
-        new EmbedBuilder().setTitle(battleTag + "님의 프로필").setFields(
-          {
-            name: "닉네임",
-            value: user.profile.nickname,
-            inline: true,
-          },
-          {
-            name: "클랜명",
-            value: user.profile.clanname || "비어있음",
-            inline: true,
-          },
-          {
-            name: "포지션",
-            value:
-              { light: "소형", middle: "중형", heavy: "대형" }[
-                user.profile.position ?? ""
-              ] || "비어있음",
-            inline: true,
-          },
-          {
-            name: "주특기",
-            value: user.profile.ability || "비어있음",
-            inline: true,
-          },
-          {
-            name: "무기",
-            value: user.profile.weapon || "비어있음",
-            inline: true,
-          },
-          {
-            name: "가젯",
-            value: user.profile.gadget.join(", "),
-            inline: true,
-          },
-        ),
+        new EmbedBuilder()
+          .setColor(PColors.primary)
+          .setTitle(battleTag + "님의 프로필")
+          .setFields(
+            {
+              name: "닉네임",
+              value: user.profile.nickname,
+              inline: true,
+            },
+            {
+              name: "클랜명",
+              value: user.profile.clanname || "비어있음",
+              inline: true,
+            },
+            {
+              name: "포지션",
+              value:
+                { light: "소형", middle: "중형", heavy: "대형" }[
+                  user.profile.position ?? ""
+                ] || "비어있음",
+              inline: true,
+            },
+            {
+              name: "주특기",
+              value: user.profile.ability || "비어있음",
+              inline: true,
+            },
+            {
+              name: "무기",
+              value: user.profile.weapon || "비어있음",
+              inline: true,
+            },
+            {
+              name: "가젯",
+              value: user.profile.gadget.join(", "),
+              inline: true,
+            },
+          ),
       ],
     });
   }

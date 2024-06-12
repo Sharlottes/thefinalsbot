@@ -1,5 +1,6 @@
 import Discord from "discord.js";
 import MessageManager from "./MessageManager";
+import PColors from "@/constants/PColors";
 
 export default class AlertMessageManager<
   R extends Discord.RepliableInteraction | Discord.Message,
@@ -15,6 +16,7 @@ export default class AlertMessageManager<
     super(responseObject);
     this.messageData.embeds = [
       new Discord.EmbedBuilder()
+        .setColor(PColors.primary)
         .setTitle(title || null)
         .setColor(Discord.Colors.Blue)
         .setDescription(description || null)

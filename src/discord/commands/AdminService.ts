@@ -8,9 +8,9 @@ import {
   ComponentType,
   EmbedBuilder,
   bold,
-  codeBlock,
 } from "discord.js";
 import Vars from "@/Vars";
+import PColors from "@/constants/PColors";
 
 @Discord()
 export default class AdminService {
@@ -38,7 +38,7 @@ export default class AdminService {
     await interaction.editReply({
       embeds: [
         new EmbedBuilder()
-          .setColor(Colors.Blue)
+          .setColor(PColors.primary)
           .setTitle("개인메시지 보내기")
           .setDescription(
             `
@@ -65,7 +65,7 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
     const confirmAskMessage = await userMessage.reply({
       embeds: [
         new EmbedBuilder()
-          .setColor(Colors.Blue)
+          .setColor(PColors.primary)
           .setTitle("메시지 확인")
           .setDescription(
             `정말로 아래 메시지를 ${target.displayName}님에게 전송하시겠습니까?`,
@@ -103,7 +103,7 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
     const dmMessage = await dmChannel.send({
       embeds: [
         new EmbedBuilder()
-          .setColor(Colors.Blue)
+          .setColor(PColors.primary)
           .setTitle("서버메신저")
           .setDescription(messageOptions.content),
       ],
@@ -124,7 +124,7 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
     const logMessage = await Vars.dmLogChannel.send({
       embeds: [
         new EmbedBuilder()
-          .setColor(Colors.Blue)
+          .setColor(PColors.primary)
           .setTitle(target.displayName + "님에게 DM을 보냈습니다.")
           .setDescription(`### 내용\n${messageOptions.content}`),
       ],
@@ -140,7 +140,7 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
     }
 
     const checkEmbed = new EmbedBuilder()
-      .setColor(Colors.Green)
+      .setColor(PColors.primary)
       .setTitle("확인됨")
       .setDescription(
         bold(interaction.user.displayName) + "님이 DM을 확인했습니다",

@@ -6,6 +6,7 @@ interface Env {
   MATCHMAKING_ANNOUNCE_CHANNEL_ID: string;
   MATCHMAKING_WAITING_CHANNEL_ID: string;
   MATCHMAKED_ROOM_CATEGORY_ID: string;
+  BAN_INVITE_GUILDS: string;
   MASTER_USERS: string;
   NODE_ENV: "production" | "development";
   MONGO_URL: string;
