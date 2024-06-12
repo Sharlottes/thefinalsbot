@@ -123,6 +123,7 @@ export default class MatchMaker {
       case "free_match_button":
         const voiceChannel = await VoiceChannelManager.createVoiceChannel(
           `${keyMap.free} 매치메이킹`,
+          { owner: interaction.user },
         );
         await autoDeleteMessage(
           interaction.reply({
@@ -149,7 +150,7 @@ export default class MatchMaker {
     }
 
     await this.rerender();
-    await this.validateMatch();
+    await this.validateMatch(interaction);
     await this.rerender();
   }
 
@@ -204,11 +205,15 @@ ${bold("대기자 수")}`,
     }
   }
 
-  async validateMatch() {
+  async validateMatch(interaction: Discord.RepliableInteraction) {
     for (const [key, queue] of Object.entries(this.matchQueue)) {
       if (queue.length < MAX_MATCH) continue;
 
-      const context = new MatchMakingContext(this, key as MatchMakingType);
+      const context = new MatchMakingContext(
+        this,
+        key as MatchMakingType,
+        interaction.user,
+      );
       while (context.sessions.length < MAX_MATCH) {
         const user = queue.shift()!;
         context.sessions.push(new MatchMakingSession(user, context));
@@ -226,11 +231,13 @@ class MatchMakingContext {
   constructor(
     public readonly matchMaker: MatchMaker,
     public readonly type: MatchMakingType,
+    public readonly craetor: Discord.User,
   ) {}
 
   async createRoom() {
     const voiceChannel = await VoiceChannelManager.createVoiceChannel(
       `${keyMap[this.type]} 매치메이킹`,
+      { owner: this.craetor },
     );
     this.voiceChannel = voiceChannel;
 
