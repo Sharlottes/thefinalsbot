@@ -28,10 +28,10 @@ export default class RoomsMaker {
   public async init(): Promise<void> {
     console.time("initalizing RoomsMaker...");
     await Promise.all(
-      Vars.roomMakingChannels.map((channel) => {
+      Object.entries(Vars.roomMakingAnnounceChannels).map(([name, channel]) => {
         FixedMessageRegister.sendMessage(
           channel,
-          this.buildChannelMessage(channel),
+          this.buildChannelMessage(name),
           "keep",
         );
       }),
@@ -39,8 +39,7 @@ export default class RoomsMaker {
     console.timeEnd("initalizing RoomsMaker...");
   }
 
-  private buildChannelMessage(channel: Discord.TextChannel) {
-    const name = channel.name.replace(/[^가-힣]/g, "");
+  private buildChannelMessage(name: string) {
     return {
       embeds: [
         new EmbedBuilder()
