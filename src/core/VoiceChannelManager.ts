@@ -46,11 +46,11 @@ export default class VoiceChannelManager {
     name: string,
     {
       removeTime = 1000 * 7,
-      parent = process.env.MATCHMAKED_ROOM_CATEGORY_ID,
+      parent = Vars.matchMakingCategory,
       owner,
     }: CreateVoiceChannelOptions = {
       removeTime: 1000 * 7,
-      parent: process.env.MATCHMAKED_ROOM_CATEGORY_ID,
+      parent: Vars.matchMakingCategory,
     },
   ) {
     const channel = await Vars.mainGuild.channels.create({

@@ -1,6 +1,5 @@
 import { ActivityType } from "discord.js";
 import { DIService, Discord, On, Once } from "discordx";
-import mongoose from "mongoose";
 
 @Discord()
 export default class BotInitalizer {
@@ -11,7 +10,6 @@ export default class BotInitalizer {
   ): Promise<void> {
     console.time("initalizing BotInitalizer...");
 
-    await mongoose.connect(process.env.MONGO_URL);
     DIService.engine.getAllServices();
     await client.initApplicationCommands();
     if ((client.application?.commands.cache.size ?? 0) > 0) {

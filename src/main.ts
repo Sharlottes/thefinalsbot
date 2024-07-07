@@ -9,8 +9,9 @@ import * as Discord from "discord.js";
 import Vars from "./Vars";
 import MatchMaker from "./discord/features/MatchMaker";
 import RoomsMaker from "./discord/features/RoomsMaker";
-import FixedMessageModel from "./models/FixedMessagesModel";
 import FixedMessageRegister from "./core/FixedMessageRegister";
+import mongoose from "mongoose";
+import ServerSettingManager from "./core/ServerSettingManager";
 
 process
   .on("unhandledRejection", (err) => {
@@ -60,9 +61,12 @@ await importx(
 );
 console.timeEnd("importing...");
 
+// login discord -> connect db -> init vars -> init cores -> init features
 console.time("bot login...");
 await client.login(process.env.TOKEN);
 console.timeEnd("bot login...");
+await mongoose.connect(process.env.MONGO_URL);
 await Vars.init(client);
+await new ServerSettingManager().init(client);
 await FixedMessageRegister.main.init();
 await Promise.all([MatchMaker.main.init(), RoomsMaker.main.init()]);
