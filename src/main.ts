@@ -11,6 +11,7 @@ import MatchMaker from "./discord/features/MatchMaker";
 import RoomsMaker from "./discord/features/RoomsMaker";
 import FixedMessageRegister from "./core/FixedMessageRegister";
 import mongoose from "mongoose";
+import ServerSettingManager from "./core/ServerSettingManager";
 
 process
   .on("unhandledRejection", (err) => {
@@ -66,5 +67,6 @@ await client.login(process.env.TOKEN);
 console.timeEnd("bot login...");
 await mongoose.connect(process.env.MONGO_URL);
 await Vars.init(client);
+await new ServerSettingManager().init(client);
 await FixedMessageRegister.main.init();
 await Promise.all([MatchMaker.main.init(), RoomsMaker.main.init()]);

@@ -21,6 +21,7 @@ const ServerSettingSchema = new Schema<
   {}
 >({
   guildId: String,
+  botId: String,
   channels: {
     dmLogChannelId: String,
     matchmakedCategoryId: String,

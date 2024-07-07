@@ -23,26 +23,6 @@ export default class Vars {
       client.guilds
         .fetch(process.env.TEST_GUILD_ID)
         .then((g) => (Vars.mainGuild = g)),
-      new Promise(async (res, rej) => {
-        const arr = process.env.ROOMMAKING_ANNOUNCE_CHANNELS_ID.split(",");
-        const promises = [];
-        for (let i = 0; i < arr.length; i += 2) {
-          const name = arr[i],
-            id = arr[i + 1];
-          promises.push(
-            client.channels
-              .fetch(id)
-              .then(
-                (c) =>
-                  (Vars.roomMakingAnnounceChannels[name] = Vars.validateChannel(
-                    c,
-                    ChannelType.GuildText,
-                  )),
-              ),
-          );
-        }
-        await Promise.all(promises).then(res).catch(rej);
-      }),
       ...process.env.MASTER_USERS.split(",").map((id) =>
         client.users.fetch(id).then((u) => Vars.masterUsers.push(u)),
       ),
