@@ -12,9 +12,9 @@ export interface LeaderboardMeta {
   returnCountOnly: boolean;
 }
 
-export interface leaderboardConstructor {
+export interface LeaderboardConstructor {
   page: number;
-  leaderboard?: LeaderboardData;
+  leaderboard: LeaderboardData;
 }
 
 export interface LeaderBoardUserData {

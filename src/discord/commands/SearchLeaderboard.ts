@@ -1,7 +1,7 @@
 import type {
   LeaderBoardUserData,
   LeaderboardData,
-  leaderboardConstructor,
+  LeaderboardConstructor,
 } from "@/@types/searchData";
 import {
   ActionRowBuilder,
@@ -16,6 +16,7 @@ import {
 import { Slash, SlashOption, Discord } from "discordx";
 import { StatusCodes } from "http-status-codes";
 import ErrorMessageManager from "../embeds/ErrorMessageManager";
+import Vars from "@/Vars";
 
 const validVersions = [
   "b1",
@@ -39,10 +40,7 @@ const validPlatforms = ["steam", "xbox", "psn", "crossplay"];
 @Discord()
 export default class SearchLeaderboard {
   // pagination cache dataset
-  data: Map<string, leaderboardConstructor> = new Map();
-
-  // we will need an attatchment initializer
-  logo: AttachmentBuilder = new AttachmentBuilder("public/images/logo.png");
+  data: Map<string, LeaderboardConstructor> = new Map();
 
   @Slash({
     name: "전적검색",
@@ -112,46 +110,52 @@ export default class SearchLeaderboard {
     }
 
     // initialize interaction data.
-    const id = interaction.id;
-    this.data.set(id, {
+    this.data.set(interaction.id, {
       page: 0,
       leaderboard: result.data,
     });
 
-    // collectors
     const response = await interaction.editReply({
-      embeds: [this.getEmbed(id)],
-      components: [this.getPageButton(id)],
-      files: [this.logo],
+      embeds: [this.getEmbed(interaction.id)],
+      components: [this.getPageButton(interaction.id)],
+      files: [
+        new AttachmentBuilder(
+          `public/images/ranks/${result.data.data?.[0].league.toLowerCase().replaceAll(" ", "-")}.png`,
+        ),
+      ],
     });
 
+    // collectors
     const collector = response.createMessageComponentCollector({
       filter: (i) => i.user.id === interaction.user.id,
       componentType: ComponentType.Button,
       idle: 20_000,
     });
-
     collector.on("collect", async (collected_interaction) => {
-      let nowPage = this.data.get(interaction.id)?.page || 0;
-      nowPage += Number(
-        collected_interaction.customId.replaceAll("page_count_", ""),
-      );
+      const data = this.data.get(interaction.id)!; // 순서상 data가 없는건 불가능
+      const nowPage =
+        data.page +
+        Number(collected_interaction.customId.replaceAll("page_count_", ""));
 
       // update Page
-      this.data.set(id, {
+      this.data.set(interaction.id, {
         page: nowPage,
-        leaderboard: this.data.get(id)?.leaderboard,
+        leaderboard: data.leaderboard,
       });
 
       await collected_interaction.update({
-        embeds: [this.getEmbed(id)],
-        components: [this.getPageButton(id)],
-        files: [this.logo],
+        embeds: [this.getEmbed(interaction.id)],
+        components: [this.getPageButton(interaction.id)],
+        files: [
+          new AttachmentBuilder(
+            `public/images/ranks/${data.leaderboard.data?.[nowPage].league.toLowerCase().replaceAll(" ", "-")}.png`,
+          ),
+        ],
       });
     });
 
     collector.on("end", async () => {
-      this.data.delete(id);
+      this.data.delete(interaction.id);
       await interaction.editReply({ components: [] });
     });
   }
@@ -164,7 +168,7 @@ export default class SearchLeaderboard {
   getLeaderBoardData(id: string): LeaderBoardUserData {
     const data = this.data.get(id);
     return (
-      data?.leaderboard?.data?.[data.page] || {
+      data?.leaderboard.data?.[data.page] || {
         rank: -1,
         change: 0,
         leagueNumber: 0,
@@ -193,10 +197,10 @@ export default class SearchLeaderboard {
       .setTitle(`${data.name}` /*`#${data.rank} - 『${data.name}』`*/)
       .setAuthor({
         name: `THE FINALS TEAMS`,
-        iconURL: `attachment://logo.png`,
+        iconURL: Vars.client.user?.displayAvatarURL(),
       })
       .setThumbnail(
-        `https://storage.googleapis.com/embark-discovery-leaderboard/img/thumbs/${data.league.toLowerCase().replaceAll(" ", "-")}-thumb.png`,
+        `attachment://${data.league.toLowerCase().replaceAll(" ", "-")}.png`,
       )
       .addFields(
         {
@@ -242,7 +246,7 @@ export default class SearchLeaderboard {
       { symbol: "⏩", page: +10 },
     ];
 
-    let action_rows = new ActionRowBuilder();
+    let action_rows = new ActionRowBuilder<ButtonBuilder>();
 
     for (let i = 0; i < btn_symbols.length; i++) {
       if (btn_symbols[i].symbol == "/") {
@@ -263,6 +267,6 @@ export default class SearchLeaderboard {
       );
     }
 
-    return action_rows as ActionRowBuilder<ButtonBuilder>;
+    return action_rows;
   }
 }
