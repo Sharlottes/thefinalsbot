@@ -67,6 +67,7 @@ await client.login(process.env.TOKEN);
 console.timeEnd("bot login...");
 await mongoose.connect(process.env.MONGO_URL);
 await Vars.init(client);
-await new ServerSettingManager().init(client);
+await ServerSettingManager.main.init(client);
+await Vars.initServerSetting(client);
 await FixedMessageRegister.main.init();
 await Promise.all([MatchMaker.main.init(), RoomsMaker.main.init()]);

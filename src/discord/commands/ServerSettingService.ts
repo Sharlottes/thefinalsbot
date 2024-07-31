@@ -4,7 +4,6 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ChannelSelectMenuBuilder,
   EmbedBuilder,
   StringSelectMenuBuilder,
   inlineCode,
@@ -97,7 +96,7 @@ export class ServerSettingService {
         return channel;
       };
       const channel = await retry();
-      serverSettings.channels[value] = channel;
+      // serverSettings.channels[value] = channel;
     } else if (componentInteraction.customId === "channel_submit") {
       await serverSettings.save();
       await componentInteraction.editReply("완료되었습니다.");

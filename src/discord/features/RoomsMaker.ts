@@ -10,6 +10,7 @@ import {
 } from "discord.js";
 import { ButtonComponent, Discord } from "discordx";
 import PColors from "@/constants/PColors";
+import ServerSettingManager from "@/core/ServerSettingManager";
 
 const roomEmbedDescriptions: Record<string, string> = {
   고랭크: "고랭크(플레티넘~최대) 토너먼트 파티 구인구직 가능합니다.",

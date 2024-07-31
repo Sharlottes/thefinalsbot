@@ -1,5 +1,6 @@
 import { ChannelType } from "discord.js";
-import ServerSettingModel from "./models/ServerSetting";
+import { Server } from "http";
+import ServerSettingManager from "./core/ServerSettingManager";
 
 export default class Vars {
   static client: DiscordX.Client;
@@ -14,11 +15,6 @@ export default class Vars {
 
   public static async init(client: DiscordX.Client): Promise<void> {
     Vars.client = client;
-    const serverSettings = await ServerSettingModel.findOne({
-      guildId: process.env.TEST_GUILD_ID,
-      botId: client.user!.id,
-    });
-    if (!serverSettings) throw new Error("ServerSettings not found");
     await Promise.all([
       client.guilds
         .fetch(process.env.TEST_GUILD_ID)
@@ -26,17 +22,19 @@ export default class Vars {
       ...process.env.MASTER_USERS.split(",").map((id) =>
         client.users.fetch(id).then((u) => Vars.masterUsers.push(u)),
       ),
-      ...Object.entries(serverSettings.channels.roomMakingAnnounceChannels).map(
-        ([name, id]) =>
-          client.channels
-            .fetch(id)
-            .then(
-              (c) =>
-                (Vars.roomMakingAnnounceChannels[name] = Vars.validateChannel(
-                  c,
-                  ChannelType.GuildText,
-                )),
-            ),
+    ]);
+  }
+  public static async initServerSetting(client: DiscordX.Client) {
+    const serverSettings = ServerSettingManager.main.getSetting();
+    if (!serverSettings) throw new Error("ServerSettings not found");
+    await Promise.all([
+      ...Array.from(
+        serverSettings.channels.roomMakingAnnounceChannels.entries(),
+      ).map(async ([name, id]) =>
+        client.channels
+          .fetch(id)
+          .then((c) => Vars.validateChannel(c, ChannelType.GuildText))
+          .then((c) => (Vars.roomMakingAnnounceChannels[name] = c)),
       ),
       client.channels
         .fetch(serverSettings.channels.dmLogChannelId)
