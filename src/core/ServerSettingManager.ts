@@ -1,4 +1,7 @@
-import ServerSettingModel, { ChannelsSchema } from "@/models/ServerSetting";
+import ServerSettingModel, {
+  ChannelsSchema,
+  ServerSettingSchema,
+} from "@/models/ServerSetting";
 import Vars from "@/Vars";
 import {
   ActionRowBuilder,
@@ -60,11 +63,11 @@ export default class ServerSettingManager {
     if (serverSettings) {
       this.settingMap.set(guild.id, serverSettings);
     } else {
-      await this.requestSettingInit(guild, client);
+      await this.requestSettingInit(guild);
     }
   }
 
-  async requestSettingInit(guild: Discord.Guild, client: DiscordX.Client) {
+  async requestSettingInit(guild: Discord.Guild) {
     const channel = await guild.channels.create({
       type: ChannelType.GuildText,
       name: "server init",
@@ -85,23 +88,28 @@ export default class ServerSettingManager {
         },
       ],
     });
-    channel.send("서버 설정이 없습니다. 설정을 초기화합니다...");
-    const setting = new ServerSettingModel({
-      guildId: guild.id,
-      botId: client.user!.id,
-      channels: {
-        dmLogChannelId: "",
-        matchmakedCategoryId: "",
-        matchmakingAnnounceChannelId: "",
-        matchmakingWaitingChannelId: "",
-        roomMakingAnnounceChannels: {},
-        invalidInviteGuilds: [],
-      },
-    });
+    channel.send("서버 설정 준비중...");
+    const setting =
+      (await ServerSettingModel.findOne({
+        guildId: guild.id,
+        botId: Vars.client.user!.id,
+      })) ??
+      new ServerSettingModel({
+        guildId: guild.id,
+        botId: Vars.client.user!.id,
+        channels: {
+          dmLogChannelId: "",
+          matchmakedCategoryId: "",
+          matchmakingAnnounceChannelId: "",
+          matchmakingWaitingChannelId: "",
+          roomMakingAnnounceChannels: {},
+          invalidInviteGuilds: [],
+        },
+      });
     const interaction = await channel
       .send({
         content:
-          "서버 설정 초기화가 완료되었습니다.\n세부 설정 버튼을 눌러 서버 설정을 완료하세요.",
+          "서버 설정이 준비되었습니다.\n세부 설정 버튼을 눌러 서버 설정을 완료하세요.",
         components: [
           new ActionRowBuilder<ButtonBuilder>().addComponents(
             new ButtonBuilder()
@@ -145,6 +153,7 @@ export default class ServerSettingManager {
     channel: Discord.TextBasedChannel,
     type: keyof typeof InputResolvers,
     key: keyof ServerSettingData["channels"],
+    value?: string | string[] | Record<string, string>,
   ): Promise<[string | string[] | Record<string, string> | undefined, string]> {
     const valueType = ChannelsSchema.obj[key];
     const resolver: PrimitiveInputResolver<PrimitiveInputType> =
@@ -153,10 +162,12 @@ export default class ServerSettingManager {
     if (!valueType) return [undefined, ""];
     if (valueType === String) {
       const input = new TextInput(channel, resolver);
+      if (value) input.value = value as string;
       await input.start();
       return [this.serializeValue(input.value), input.getValueString()];
     } else if (Array.isArray(valueType)) {
       const input = new ArrayInput(channel, resolver);
+      if (value) input.value = value as string[];
       await input.start();
 
       return [
@@ -165,6 +176,7 @@ export default class ServerSettingManager {
       ];
     } else {
       const input = new ObjectInput(channel, resolver);
+      if (value) input.value = value as Record<string, string>;
       await input.start();
       return [
         Object.fromEntries(
