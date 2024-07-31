@@ -15,9 +15,30 @@ import {
 } from "discord.js";
 import { Slash, SlashOption, Discord } from "discordx";
 import { StatusCodes } from "http-status-codes";
+import ErrorMessageManager from "../embeds/ErrorMessageManager";
+
+const validVersions = [
+  "b1",
+  "closedbeta1",
+  "cb2",
+  "closedbeta2",
+  "ob",
+  "openbeta",
+  "s1",
+  "season1",
+  "s2",
+  "season2",
+  "live",
+  "s3",
+  "season3",
+  "s3worldtour",
+  "season3worldtour",
+];
+const validPlatforms = ["steam", "xbox", "psn", "crossplay"];
 
 @Discord()
 export default class SearchLeaderboard {
+  // pagination cache dataset
   data: Map<string, leaderboardConstructor> = new Map();
 
   // we will need an attatchment initializer
@@ -25,7 +46,7 @@ export default class SearchLeaderboard {
 
   @Slash({
     name: "전적검색",
-    description: "TheFinals의  랭크를 검색합니다 (최소순위 10000위)",
+    description: "TheFinals의 랭크를 검색합니다 (최소순위 10000위)",
   })
   async search(
     @SlashOption({
@@ -35,20 +56,58 @@ export default class SearchLeaderboard {
       type: ApplicationCommandOptionType.String,
     })
     target: string,
+    @SlashOption({
+      name: "버전",
+      description:
+        "리더보드 시즌을 선택합니다. (b1, cb2, ob, s1, s2, live, s3, s3worldtour)",
+      required: false,
+      type: ApplicationCommandOptionType.String,
+    })
+    version: string | undefined,
+    @SlashOption({
+      name: "플랫폼",
+      description:
+        "리더보드 플랫폼을 선택합니다. (crossplay, steam, xbox, psn)",
+      required: false,
+      type: ApplicationCommandOptionType.String,
+    })
+    platform: string | undefined,
     interaction: Discord.ChatInputCommandInteraction,
-    client: DiscordX.Client,
   ) {
     await interaction.deferReply();
-    target = target === "*" ? "" : target; // The input * means all search.
+
+    if (version && !validVersions.includes(version)) {
+      interaction.editReply("잘못된 버전 값입니다.");
+      new ErrorMessageManager(interaction, {
+        description: `잘못된 버전입니다.
+가능한 버전 값: ${validVersions.join(", ")}`,
+      }).update();
+      return;
+    }
+    if (platform && !validPlatforms.includes(platform)) {
+      interaction.editReply("잘못된 플랫폼 값입니다.");
+      new ErrorMessageManager(interaction, {
+        description: `잘못된 플랫폼입니다.
+가능한 플랫폼 값: ${validPlatforms.join(", ")}`,
+      }).update();
+      return;
+    }
 
     const result = await fetch(
-      `https://api.the-finals-leaderboard.com/v1/leaderboard/s3/crossplay?name=${target}`,
+      `https://api.the-finals-leaderboard.com/v1/leaderboard/${version ?? "s3"}/${platform ?? "crossplay"}?name=${target === "*" ? "" : target}`,
     )
-      .then((response) => ({ status: response.status, data: response.json() }))
+      .then(async (response) => ({
+        status: response.status,
+        data: (await response.json()) as LeaderboardData,
+      }))
       .catch((e) => console.warn(e)); // print warning and ignore.
 
     if (result === undefined || result.status != StatusCodes.OK) {
       interaction.editReply("서버에 문제가 있어 전적검색을 할 수 없습니다. X(");
+      return;
+    }
+    if (result.data.count === 0) {
+      interaction.editReply("검색 결과가 없습니다 (ㅠ ㅠ)");
       return;
     }
 
@@ -56,15 +115,8 @@ export default class SearchLeaderboard {
     const id = interaction.id;
     this.data.set(id, {
       page: 0,
-      leaderboard: (await result.data) as LeaderboardData,
+      leaderboard: result.data,
     });
-
-    if (this.data.get(id)?.leaderboard?.count === 0) {
-      interaction.editReply("검색 결과가 없습니다 (ㅠ ㅠ)");
-
-      this.data.delete(id); // destory interaction data.
-      return;
-    }
 
     // collectors
     const response = await interaction.editReply({
@@ -133,8 +185,9 @@ export default class SearchLeaderboard {
    */
   getEmbed(id: string): EmbedBuilder {
     const data = this.getLeaderBoardData(id);
-    const rank_color = [0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8];
-
+    const rank_color = [
+      0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8, 0xe0115f,
+    ];
     return new EmbedBuilder()
       .setColor(rank_color[Math.floor((data.leagueNumber - 1) / 4)])
       .setTitle(`${data.name}` /*`#${data.rank} - 『${data.name}』`*/)
