@@ -11,7 +11,7 @@ import {
   ButtonStyle,
   ComponentType,
   EmbedBuilder,
-  codeBlock
+  codeBlock,
 } from "discord.js";
 import { Slash, SlashOption, Discord } from "discordx";
 import { StatusCodes } from "http-status-codes";
@@ -21,7 +21,7 @@ export default class SearchLeaderboard {
   data: Map<string, leaderboardConstructor> = new Map();
 
   // we will need an attatchment initializer
-  logo: AttachmentBuilder = new AttachmentBuilder('public/images/logo.png');
+  logo: AttachmentBuilder = new AttachmentBuilder("public/images/logo.png");
 
   @Slash({
     name: "전적검색",
@@ -42,7 +42,7 @@ export default class SearchLeaderboard {
     target = target === "*" ? "" : target; // The input * means all search.
 
     const result = await fetch(
-      `https://api.the-finals-leaderboard.com/v1/leaderboard/s2/crossplay?name=${target}`,
+      `https://api.the-finals-leaderboard.com/v1/leaderboard/s3/crossplay?name=${target}`,
     )
       .then((response) => ({ status: response.status, data: response.json() }))
       .catch((e) => console.warn(e)); // print warning and ignore.
@@ -70,7 +70,7 @@ export default class SearchLeaderboard {
     const response = await interaction.editReply({
       embeds: [this.getEmbed(id)],
       components: [this.getPageButton(id)],
-      files: [this.logo]
+      files: [this.logo],
     });
 
     const collector = response.createMessageComponentCollector({
@@ -94,7 +94,7 @@ export default class SearchLeaderboard {
       await collected_interaction.update({
         embeds: [this.getEmbed(id)],
         components: [this.getPageButton(id)],
-        files: [this.logo]
+        files: [this.logo],
       });
     });
 
@@ -137,7 +137,7 @@ export default class SearchLeaderboard {
 
     return new EmbedBuilder()
       .setColor(rank_color[Math.floor((data.leagueNumber - 1) / 4)])
-      .setTitle(`${data.name}`/*`#${data.rank} - 『${data.name}』`*/)
+      .setTitle(`${data.name}` /*`#${data.rank} - 『${data.name}』`*/)
       .setAuthor({
         name: `THE FINALS TEAMS`,
         iconURL: `attachment://logo.png`,
@@ -147,19 +147,22 @@ export default class SearchLeaderboard {
       )
       .addFields(
         {
-            name: "순위", //"═════════•°• 순위 •°•═════════",
-            value: codeBlock(`${data.rank}`),
-            //inline: true
+          name: "순위", //"═════════•°• 순위 •°•═════════",
+          value: codeBlock(`${data.rank}`),
+          //inline: true
         },
         // { name: "\u200B", value: "\u200B" },
         {
-          name: "랭크",//" ═══•°• 랭크 •°•═══",
+          name: "랭크", //" ═══•°• 랭크 •°•═══",
           value: codeBlock(`${data.league}`),
           //inline: true,
         },
         {
-          name: "변동",//" ══•°• 24시간 •°•══",
-          value: codeBlock('diff', `${data.change > 0 ? "+" + data.change : data.change}`)
+          name: "변동", //" ══•°• 24시간 •°•══",
+          value: codeBlock(
+            "diff",
+            `${data.change > 0 ? "+" + data.change : data.change}`,
+          ),
           //inline: true,
         },
       );
