@@ -36,7 +36,7 @@ const validPlatforms = ["steam", "xbox", "psn", "crossplay"];
 const rank_color = [0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8, 0xe0115f];
 
 @Discord()
-export default class SearchLeaderboard {
+export default class LeaderboardService {
   @Slash({
     name: "랭킹목록",
     description: "the finals의 모든 리더보드를 조회합니다.",
