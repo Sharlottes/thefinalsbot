@@ -1,3 +1,4 @@
+import KeypadMessageManager from "@/discord/embeds/KeypadMessageManager";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { Discord, ButtonComponent } from "discordx";
 import EventEmitter from "node:events";
@@ -26,21 +27,42 @@ class PaginationContext extends (EventEmitter as new () => TypedEmitter<Paginati
 
 @Discord()
 export default class PaginationManager {
+  // TODO 이 잠재적 메모리 릭 테러범을 조질 방법 생각하기
   public contextes: Map<string, PaginationContext> = new Map();
   static main: PaginationManager;
   constructor() {
     PaginationManager.main = this;
   }
 
-  @ButtonComponent({ id: /page_count_\-?\d+/ })
+  @ButtonComponent({ id: /page_count(?=_\-?\d+)?/ })
   async handler(interaction: Discord.ButtonInteraction) {
     const context = this.contextes.get(interaction.message.id);
     if (!context) return;
-    context.currentPage += Number(
-      interaction.customId.replaceAll("page_count_", ""),
-    );
-    await interaction.update({
-      components: [PaginationManager.buildButtons(context)],
+    if (interaction.customId == "page_count") {
+      await new KeypadMessageManager(interaction, {
+        callback: (amount) => {
+          console.log(amount);
+          context.currentPage = amount;
+          this.updateButtons(interaction, context);
+        },
+        max: context.size - 1,
+      }).send();
+    } else {
+      const number = interaction.customId.replaceAll("page_count_", "");
+      context.currentPage += Number(number);
+      this.updateButtons(interaction, context);
+    }
+  }
+
+  private async updateButtons(
+    interaction: Discord.ButtonInteraction,
+    context: PaginationContext,
+  ) {
+    const comps: Discord.MessageEditOptions["components"] =
+      interaction.message.components;
+    comps[0] = PaginationManager.buildButtons(context).toJSON();
+    await interaction.message.edit({
+      components: comps,
     });
     context.emit("change");
   }
@@ -63,7 +85,7 @@ export default class PaginationManager {
       .setCustomId("page_count")
       .setLabel(`${context.currentPage + 1} / ${context.size}`)
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(true /*page_length === 1*/);
+      .setDisabled(context.size === 1);
 
     const btn_symbols = [
       { symbol: "⏪", page: -10 },

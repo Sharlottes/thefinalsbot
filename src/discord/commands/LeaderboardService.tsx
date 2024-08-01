@@ -61,19 +61,17 @@ export default class LeaderboardService {
     interaction: Discord.ChatInputCommandInteraction,
   ) {
     if (version && !validVersions.includes(version)) {
-      interaction.editReply("잘못된 버전 값입니다.");
       new ErrorMessageManager(interaction, {
         description: `잘못된 버전입니다.
 가능한 버전 값: ${validVersions.join(", ")}`,
-      }).update();
+      }).send();
       return;
     }
     if (platform && !validPlatforms.includes(platform)) {
-      interaction.editReply("잘못된 플랫폼 값입니다.");
       new ErrorMessageManager(interaction, {
         description: `잘못된 플랫폼입니다.
 가능한 플랫폼 값: ${validPlatforms.join(", ")}`,
-      }).update();
+      }).send();
       return;
     }
 
@@ -181,7 +179,10 @@ export default class LeaderboardService {
       return;
     }
 
-    const context = await PaginationManager.start(10, interaction);
+    const context = await PaginationManager.start(
+      result.data.count,
+      interaction,
+    );
     const handleChange = async () => {
       const data = result.data.data![context.currentPage]; // 순서상 data가 없는건 불가능
       await interaction.editReply({

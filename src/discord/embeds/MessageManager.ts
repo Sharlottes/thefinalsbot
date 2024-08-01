@@ -6,7 +6,7 @@ import Discord from "discord.js";
 export default class MessageManager<
   R extends Discord.RepliableInteraction | Discord.Message = Discord.Message,
 > {
-  private static readonly emptyMessageData: MessageData = {
+  protected static readonly emptyMessageData: MessageData = {
     content: null,
     embeds: [],
     allowedMentions: {},
@@ -14,7 +14,7 @@ export default class MessageManager<
     attachments: [],
     components: [],
   };
-  private readonly messageSender: MessageSender<R>;
+  protected readonly messageSender: MessageSender<R>;
   public messageData: MessageData = Object.create(
     MessageManager.emptyMessageData,
   );
@@ -211,7 +211,7 @@ interface MessageData {
 class MessageSender<
   ResponseObject extends Discord.RepliableInteraction | Discord.Message,
 > {
-  constructor(private object: ResponseObject) {}
+  constructor(public object: ResponseObject) {}
 
   public async send(
     messageData: MessageData,
@@ -219,7 +219,10 @@ class MessageSender<
       ? Exclude<Discord.InteractionReplyOptions, keyof typeof messageData>
       : Exclude<Discord.MessageCreateOptions, keyof typeof messageData>,
   ) {
-    if (this.object instanceof Discord.BaseInteraction) {
+    if (
+      this.object instanceof Discord.BaseInteraction &&
+      !this.object.replied
+    ) {
       return await this.object.reply({
         content: messageData.content ?? undefined,
         embeds: messageData.embeds,
@@ -231,8 +234,8 @@ class MessageSender<
           keyof typeof messageData
         >),
       });
-    } else if (this.object instanceof Discord.Message) {
-      return await this.object.channel.send({
+    } else {
+      return await this.object.channel!.send({
         content: messageData.content ?? undefined,
         embeds: messageData.embeds,
         allowedMentions: messageData.allowedMentions,
@@ -259,7 +262,21 @@ class MessageSender<
       return (await this.object.editReply(param)) as ReturnType<Func>;
     }
     if (this.object instanceof Discord.Message) {
+      // @ts-expect-error
+      console.log(param["components"]);
+
       return (await this.object.edit(param)) as ReturnType<Func>;
+    }
+
+    throw new Error("No interaction or message");
+  }
+
+  public async remove() {
+    if (this.object instanceof Discord.BaseInteraction) {
+      return await this.object.deleteReply();
+    }
+    if (this.object instanceof Discord.Message) {
+      return await this.object.delete();
     }
 
     throw new Error("No interaction or message");

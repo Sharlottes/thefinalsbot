@@ -8,3 +8,13 @@ interface Profile {
 }
 
 type MaybePromise<T> = T | Promise<T>;
+
+interface InteractiveTypeMap {
+  button: Discord.ButtonInteraction;
+}
+interface Interactive<
+  K extends keyof InteractiveTypeMap = keyof InteractiveTypeMap,
+> {
+  handleInteraction(interaction: InteractiveTypeMap[K]): void;
+  getInteractionType(): K;
+}
