@@ -1,6 +1,9 @@
 import { ChannelType } from "discord.js";
-import { Server } from "http";
 import ServerSettingManager from "./core/ServerSettingManager";
+import { SatoriOptions } from "satori/wasm";
+import fs from "fs";
+import path from "path";
+import { promisify } from "util";
 
 export default class Vars {
   static client: DiscordX.Client;
@@ -12,10 +15,41 @@ export default class Vars {
   static matchMakingWaitingChannel: Discord.VoiceBasedChannel;
   static matchMakingCategory: Discord.CategoryChannel;
   static banInviteGuilds: string[];
+  static font: SatoriOptions["fonts"][number];
+  static images: Record<string, string> = {};
 
   public static async init(client: DiscordX.Client): Promise<void> {
     Vars.client = client;
     await Promise.all([
+      promisify(fs.readdir)(
+        path.resolve(import.meta.dirname, "../public/images/ranks"),
+      ).then((files) =>
+        Promise.all(
+          files.map((file) =>
+            promisify(fs.readFile)(
+              path.resolve(
+                import.meta.dirname,
+                `../public/images/ranks/${file}`,
+              ),
+              { encoding: "base64" },
+            ).then((base64) => (Vars.images[file] = base64)),
+          ),
+        ),
+      ),
+      promisify(fs.readFile)(
+        path.resolve(
+          import.meta.dirname,
+          "../public/fonts/Pretendard-Regular.otf",
+        ),
+      ).then(
+        (data) =>
+          (this.font = {
+            name: "Pretendard",
+            data,
+            weight: 400,
+            style: "normal",
+          }),
+      ),
       client.guilds
         .fetch(process.env.TEST_GUILD_ID)
         .then((g) => (Vars.mainGuild = g)),
