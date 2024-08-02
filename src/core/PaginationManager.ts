@@ -39,14 +39,14 @@ export default class PaginationManager {
     const context = this.contextes.get(interaction.message.id);
     if (!context) return;
     if (interaction.customId == "page_count") {
-      await new KeypadMessageManager(interaction, {
+      await KeypadMessageManager.Builder.send("interaction", interaction, {
         callback: (amount) => {
           console.log(amount);
           context.currentPage = amount;
           this.updateButtons(interaction, context);
         },
         max: context.size - 1,
-      }).send();
+      });
     } else {
       const number = interaction.customId.replaceAll("page_count_", "");
       context.currentPage += Number(number);

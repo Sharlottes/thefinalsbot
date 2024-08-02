@@ -14,6 +14,7 @@ import colors from "@radix-ui/colors";
 import { Fragment } from "react";
 import PColors from "@/constants/PColors";
 import PaginationManager from "@/core/PaginationManager";
+import autoDeleteMessage from "@/utils/autoDeleteMessage";
 
 const validVersions = [
   "b1",
@@ -61,17 +62,21 @@ export default class LeaderboardService {
     interaction: Discord.ChatInputCommandInteraction,
   ) {
     if (version && !validVersions.includes(version)) {
-      new ErrorMessageManager(interaction, {
-        description: `잘못된 버전입니다.
+      await autoDeleteMessage(
+        ErrorMessageManager.Builder.send("interaction", interaction, {
+          description: `잘못된 버전입니다.
 가능한 버전 값: ${validVersions.join(", ")}`,
-      }).send();
+        }).then((m) => m.message),
+      );
       return;
     }
     if (platform && !validPlatforms.includes(platform)) {
-      new ErrorMessageManager(interaction, {
-        description: `잘못된 플랫폼입니다.
+      await autoDeleteMessage(
+        ErrorMessageManager.Builder.send("interaction", interaction, {
+          description: `잘못된 플랫폼입니다.
 가능한 플랫폼 값: ${validPlatforms.join(", ")}`,
-      }).send();
+        }).then((m) => m.message),
+      );
       return;
     }
 
@@ -148,17 +153,21 @@ export default class LeaderboardService {
   ) {
     if (version && !validVersions.includes(version)) {
       interaction.editReply("잘못된 버전 값입니다.");
-      new ErrorMessageManager(interaction, {
-        description: `잘못된 버전입니다.
+      await autoDeleteMessage(
+        ErrorMessageManager.Builder.send("interaction", interaction, {
+          description: `잘못된 버전입니다.
 가능한 버전 값: ${validVersions.join(", ")}`,
-      }).send();
+        }).then((m) => m.message),
+      );
       return;
     } else if (platform && !validPlatforms.includes(platform)) {
       interaction.editReply("잘못된 플랫폼 값입니다.");
-      new ErrorMessageManager(interaction, {
-        description: `잘못된 플랫폼입니다.
+      await autoDeleteMessage(
+        ErrorMessageManager.Builder.send("interaction", interaction, {
+          description: `잘못된 플랫폼입니다.
 가능한 플랫폼 값: ${validPlatforms.join(", ")}`,
-      }).send();
+        }).then((m) => m.message),
+      );
       return;
     }
 

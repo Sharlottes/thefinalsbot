@@ -1,19 +1,19 @@
 import Discord from "discord.js";
-import MessageManager from "./MessageManager";
+import MessageManager, { MessageData } from "./MessageManager";
 import PColors from "@/constants/PColors";
+import MessageBuilder from "./MessageBuilder";
 
-export default class AlertMessageManager<
-  R extends Discord.RepliableInteraction | Discord.Message,
-> extends MessageManager<R> {
+export default class AlertMessageManager extends MessageManager {
   public constructor(
-    responseObject: R,
+    message: Discord.Message,
+    messageData: MessageData,
     {
       title,
       description,
       footer,
     }: { title?: string; description?: string; footer?: [string, string] },
   ) {
-    super(responseObject);
+    super(message, messageData);
     this.messageData.embeds = [
       new Discord.EmbedBuilder()
         .setColor(PColors.primary)
@@ -30,4 +30,6 @@ export default class AlertMessageManager<
         ),
     ];
   }
+
+  public static override Builder = new MessageBuilder(AlertMessageManager);
 }
