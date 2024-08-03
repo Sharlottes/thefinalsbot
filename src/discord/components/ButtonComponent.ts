@@ -36,22 +36,18 @@ export default class ButtonComponent
   }
 
   public static create(
-    id: string,
-    name: string,
-    callback: (interaction: Discord.ButtonInteraction) => unknown,
-    options: Partial<
-      Omit<
-        ConstructorParameters<typeof ButtonComponent>[0],
-        "label" | "customId"
-      >
-    > = {
+    options: Partial<ConstructorParameters<typeof ButtonComponent>[0]> = {
       style: ButtonStyle.Primary,
+      customId: Date.now().toString(),
     },
+    callback: (interaction: Discord.ButtonInteraction) => unknown = () => {},
   ) {
     return new this({
       onClick: callback,
-      customId: name.replaceAll(/\s/g, "-") + id,
-      label: name,
+      customId:
+        (options.label?.replaceAll(/\s/g, "-") || "") +
+        (options.emoji?.toString() || "") +
+        options.customId!,
       ...options,
     });
   }

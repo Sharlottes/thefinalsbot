@@ -13,7 +13,7 @@ import { Resvg } from "@resvg/resvg-js";
 import colors from "@radix-ui/colors";
 import { Fragment } from "react";
 import PColors from "@/constants/PColors";
-import PaginationManager from "@/core/PaginationManager";
+import PaginationMessageManager from "../embeds/PaginationMessageManager";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 
 const validVersions = [
@@ -63,19 +63,23 @@ export default class LeaderboardService {
   ) {
     if (version && !validVersions.includes(version)) {
       await autoDeleteMessage(
-        ErrorMessageManager.Builder.send("interaction", interaction, {
-          description: `잘못된 버전입니다.
+        new ErrorMessageManager.Builder()
+          .send("interaction", interaction, {
+            description: `잘못된 버전입니다.
 가능한 버전 값: ${validVersions.join(", ")}`,
-        }).then((m) => m.message),
+          })
+          .then((m) => m.message),
       );
       return;
     }
     if (platform && !validPlatforms.includes(platform)) {
       await autoDeleteMessage(
-        ErrorMessageManager.Builder.send("interaction", interaction, {
-          description: `잘못된 플랫폼입니다.
+        new ErrorMessageManager.Builder()
+          .send("interaction", interaction, {
+            description: `잘못된 플랫폼입니다.
 가능한 플랫폼 값: ${validPlatforms.join(", ")}`,
-        }).then((m) => m.message),
+          })
+          .then((m) => m.message),
       );
       return;
     }
@@ -101,15 +105,16 @@ export default class LeaderboardService {
       return;
     }
 
-    const context = await PaginationManager.start(
-      ~~(result.data.count / 10),
+    const manager = await new PaginationMessageManager.Builder().send(
+      "interaction",
       interaction,
+      { size: ~~(result.data.count / 10) },
     );
     const handleChange = async () => {
       const svg = await this.buildTableImg(
         result.data.data!.slice(
-          context.currentPage * 10,
-          (context.currentPage + 1) * 10,
+          manager.$currentPage * 10,
+          (manager.$currentPage + 1) * 10,
         ),
         platform,
         version,
@@ -119,7 +124,7 @@ export default class LeaderboardService {
       });
     };
     await handleChange();
-    context.on("change", handleChange);
+    manager.events.on("change", handleChange);
   }
   @Slash({
     name: "전적검색",
@@ -154,19 +159,23 @@ export default class LeaderboardService {
     if (version && !validVersions.includes(version)) {
       interaction.editReply("잘못된 버전 값입니다.");
       await autoDeleteMessage(
-        ErrorMessageManager.Builder.send("interaction", interaction, {
-          description: `잘못된 버전입니다.
+        new ErrorMessageManager.Builder()
+          .send("interaction", interaction, {
+            description: `잘못된 버전입니다.
 가능한 버전 값: ${validVersions.join(", ")}`,
-        }).then((m) => m.message),
+          })
+          .then((m) => m.message),
       );
       return;
     } else if (platform && !validPlatforms.includes(platform)) {
       interaction.editReply("잘못된 플랫폼 값입니다.");
       await autoDeleteMessage(
-        ErrorMessageManager.Builder.send("interaction", interaction, {
-          description: `잘못된 플랫폼입니다.
+        new ErrorMessageManager.Builder()
+          .send("interaction", interaction, {
+            description: `잘못된 플랫폼입니다.
 가능한 플랫폼 값: ${validPlatforms.join(", ")}`,
-        }).then((m) => m.message),
+          })
+          .then((m) => m.message),
       );
       return;
     }
@@ -188,12 +197,13 @@ export default class LeaderboardService {
       return;
     }
 
-    const context = await PaginationManager.start(
-      result.data.count,
+    const manager = await new PaginationMessageManager.Builder().send(
+      "interaction",
       interaction,
+      { size: result.data.count },
     );
     const handleChange = async () => {
-      const data = result.data.data![context.currentPage]; // 순서상 data가 없는건 불가능
+      const data = result.data.data![manager.$currentPage]; // 순서상 data가 없는건 불가능
       await interaction.editReply({
         embeds: [this.buildUserDataEmbed(data)],
         files:
@@ -207,7 +217,7 @@ export default class LeaderboardService {
       });
     };
     await handleChange();
-    context.on("change", handleChange);
+    manager.events.on("change", handleChange);
   }
 
   async buildTableImg(

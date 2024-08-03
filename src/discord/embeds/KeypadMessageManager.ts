@@ -44,8 +44,7 @@ export default class KeypadMessageManager extends MessageManager {
         let sstack = stack;
         row.addComponents(
           ButtonComponent.create(
-            message.id,
-            sstack.toString(),
+            { label: sstack.toString() },
             async (interaction) => {
               ignoreInteraction(interaction);
               this.amount = await this.validate(this.amount * 10 + sstack);
@@ -59,63 +58,53 @@ export default class KeypadMessageManager extends MessageManager {
 
     this.messageData.components.push(
       new ActionRowBuilder<ButtonComponent>().addComponents(
-        ButtonComponent.create(this.message.id, "0", (interaction) => {
+        ButtonComponent.create({ label: "0" }, (interaction) => {
           ignoreInteraction(interaction);
           this.amount *= 10;
           this.updateEmbed();
         }),
         ButtonComponent.create(
-          this.message.id,
-          "del",
+          { label: "del", style: ButtonStyle.Danger },
           async (interaction) => {
             ignoreInteraction(interaction);
             this.amount = await this.validate(Math.floor(this.amount / 10));
             this.updateEmbed();
           },
-          { style: ButtonStyle.Danger },
         ),
         ButtonComponent.create(
-          this.message.id,
-          "done",
+          { label: "done", style: ButtonStyle.Success },
           (interaction) => {
             ignoreInteraction(interaction);
             this.callback(this.amount);
             this.remove();
           },
-          { style: ButtonStyle.Success },
         ),
       ),
       new ActionRowBuilder<ButtonComponent>().addComponents(
         ButtonComponent.create(
-          this.message.id,
-          "cancel",
+          { label: "cancel", style: ButtonStyle.Secondary },
           (interaction) => {
             ignoreInteraction(interaction);
             this.remove();
           },
-          { style: ButtonStyle.Secondary },
         ),
         ButtonComponent.create(
-          this.message.id,
-          "reset",
+          { label: "reset", style: ButtonStyle.Secondary },
           (interaction) => {
             ignoreInteraction(interaction);
             this.amount = Math.min(0, this.min ?? 0);
             this.updateEmbed();
           },
-          { style: ButtonStyle.Secondary },
         ),
         ...(this.max !== undefined
           ? [
               ButtonComponent.create(
-                this.message.id,
-                "max",
+                { label: "max", style: ButtonStyle.Secondary },
                 (interaction) => {
                   ignoreInteraction(interaction);
                   this.amount = this.max!;
                   this.updateEmbed();
                 },
-                { style: ButtonStyle.Secondary },
               ),
             ]
           : []),
