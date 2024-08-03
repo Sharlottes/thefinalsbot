@@ -11,8 +11,13 @@ import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import ErrorMessageManager from "./ErrorMessageManager";
 import MessageBuilder from "./MessageBuilder";
 
+export interface KeypadMessageOptions {
+  callback: (amount: number) => void;
+  min?: number;
+  max?: number;
+}
 export default class KeypadMessageManager extends MessageManager {
-  private amount = 0;
+  public amount = 0;
   private readonly callback: (amount: number) => void;
   private readonly mainEmbed: EmbedBuilder;
   private readonly max?: number;
@@ -21,21 +26,19 @@ export default class KeypadMessageManager extends MessageManager {
   public constructor(
     message: Discord.Message,
     messageData: MessageData,
-    options: { callback: (amount: number) => void; min?: number; max?: number },
+    options: KeypadMessageOptions,
   ) {
     super(message, messageData);
-    this.messageData.content = "";
     this.min = options.min;
     this.max = options.max;
     this.callback = options.callback;
-    this.mainEmbed = new EmbedBuilder()
-      .setTitle("ItemPad")
-      .setFields([{ name: "Amount", value: this.amount.toString() }]);
+    this.mainEmbed = new EmbedBuilder().setFields([
+      { name: "Amount", value: this.amount.toString() },
+    ]);
     this.messageData.embeds = [this.mainEmbed];
-
     let stack = 0;
     for (let i = 1; i <= 3; i++) {
-      const row = new ActionRowBuilder<ButtonBuilder>();
+      const row = new ActionRowBuilder<ButtonComponent>();
       for (let j = 1; j <= 3; j++) {
         stack++;
         let sstack = stack;
@@ -63,7 +66,6 @@ export default class KeypadMessageManager extends MessageManager {
         }),
         ButtonComponent.create(
           this.message.id,
-
           "del",
           async (interaction) => {
             ignoreInteraction(interaction);
@@ -74,7 +76,6 @@ export default class KeypadMessageManager extends MessageManager {
         ),
         ButtonComponent.create(
           this.message.id,
-
           "done",
           (interaction) => {
             ignoreInteraction(interaction);
@@ -87,7 +88,6 @@ export default class KeypadMessageManager extends MessageManager {
       new ActionRowBuilder<ButtonComponent>().addComponents(
         ButtonComponent.create(
           this.message.id,
-
           "cancel",
           (interaction) => {
             ignoreInteraction(interaction);
@@ -97,7 +97,6 @@ export default class KeypadMessageManager extends MessageManager {
         ),
         ButtonComponent.create(
           this.message.id,
-
           "reset",
           (interaction) => {
             ignoreInteraction(interaction);
@@ -110,7 +109,6 @@ export default class KeypadMessageManager extends MessageManager {
           ? [
               ButtonComponent.create(
                 this.message.id,
-
                 "max",
                 (interaction) => {
                   ignoreInteraction(interaction);
@@ -128,17 +126,21 @@ export default class KeypadMessageManager extends MessageManager {
   private async validate(number: number) {
     if (this.min !== undefined && number < this.min) {
       await autoDeleteMessage(
-        ErrorMessageManager.Builder.send("channel", this.message.channel, {
-          description: `${this.min}보다 작아선 안됩니다. (${number})`,
-        }).then((m) => m.message),
+        new ErrorMessageManager.Builder()
+          .send("channel", this.message.channel, {
+            description: `${this.min}보다 작아선 안됩니다. (${number})`,
+          })
+          .then((m) => m.message),
       );
       return this.amount;
     }
     if (this.max !== undefined && number > this.max) {
       await autoDeleteMessage(
-        ErrorMessageManager.Builder.send("channel", this.message.channel, {
-          description: `${this.max}보다 커선 안됩니다. (${number})`,
-        }).then((m) => m.message),
+        new ErrorMessageManager.Builder()
+          .send("channel", this.message.channel, {
+            description: `${this.max}보다 커선 안됩니다. (${number})`,
+          })
+          .then((m) => m.message),
       );
       return this.amount;
     }
@@ -156,5 +158,5 @@ export default class KeypadMessageManager extends MessageManager {
     await this.update();
   }
 
-  public static override Builder = new MessageBuilder(KeypadMessageManager);
+  public static override Builder = MessageBuilder(KeypadMessageManager);
 }

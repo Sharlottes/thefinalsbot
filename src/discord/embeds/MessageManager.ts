@@ -12,8 +12,15 @@ export default class MessageManager {
 
   public async update() {
     if (!this.message)
-      throw new Error("보내지지 않은 메시지는 업데이트할 수는 없습니다!");
-    return await this.message.edit(this.messageData);
+      throw new Error("보내지지 않은 메시지는 업데이트할 수 없습니다!");
+    return await this.message.edit({
+      content: this.messageData.content,
+      embeds: this.messageData.embeds,
+      components: this.messageData.components,
+      files: this.messageData.files,
+      allowedMentions: this.messageData.allowedMentions,
+      attachments: this.messageData.attachments,
+    });
   }
 
   public async remove() {
@@ -22,7 +29,17 @@ export default class MessageManager {
     return await this.message.delete();
   }
 
-  public static Builder = new MessageBuilder(MessageManager);
+  public static preSetupMessageData(
+    messageData: MessageData,
+    _options: any,
+    sender:
+      | Discord.PartialTextBasedChannelFields
+      | Discord.RepliableInteraction,
+  ) {
+    return messageData;
+  }
+
+  public static Builder = MessageBuilder(MessageManager);
 }
 
 export interface MessageData {
@@ -31,12 +48,5 @@ export interface MessageData {
   allowedMentions: NonNullable<Discord.BaseMessageOptions["allowedMentions"]>;
   files: NonNullable<Discord.BaseMessageOptions["files"]>;
   attachments: Discord.Attachment[];
-  components: (
-    | Discord.ActionRowBuilder<Discord.ButtonBuilder>
-    | Discord.ActionRowBuilder<Discord.ChannelSelectMenuBuilder>
-    | Discord.ActionRowBuilder<Discord.MentionableSelectMenuBuilder>
-    | Discord.ActionRowBuilder<Discord.RoleSelectMenuBuilder>
-    | Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>
-    | Discord.ActionRowBuilder<Discord.MessageActionRowComponentBuilder>
-  )[];
+  components: Discord.ActionRowBuilder<Discord.MessageActionRowComponentBuilder>[];
 }

@@ -3,18 +3,25 @@ import MessageManager, { MessageData } from "./MessageManager";
 import PColors from "@/constants/PColors";
 import MessageBuilder from "./MessageBuilder";
 
+export interface AlertMessageOptions {
+  title?: string;
+  description?: string;
+  footer?: [string, string];
+}
 export default class AlertMessageManager extends MessageManager {
   public constructor(
     message: Discord.Message,
     messageData: MessageData,
-    {
-      title,
-      description,
-      footer,
-    }: { title?: string; description?: string; footer?: [string, string] },
+    _options: AlertMessageOptions,
   ) {
     super(message, messageData);
-    this.messageData.embeds = [
+  }
+
+  public static override preSetupMessageData(
+    messageData: MessageData,
+    { title, description, footer }: AlertMessageOptions,
+  ) {
+    messageData.embeds = [
       new Discord.EmbedBuilder()
         .setColor(PColors.primary)
         .setTitle(title || null)
@@ -29,7 +36,8 @@ export default class AlertMessageManager extends MessageManager {
             : null,
         ),
     ];
+    return messageData;
   }
 
-  public static override Builder = new MessageBuilder(AlertMessageManager);
+  public static override Builder = MessageBuilder(AlertMessageManager);
 }

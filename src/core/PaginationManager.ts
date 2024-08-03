@@ -39,14 +39,18 @@ export default class PaginationManager {
     const context = this.contextes.get(interaction.message.id);
     if (!context) return;
     if (interaction.customId == "page_count") {
-      await KeypadMessageManager.Builder.send("interaction", interaction, {
-        callback: (amount) => {
-          console.log(amount);
-          context.currentPage = amount;
-          this.updateButtons(interaction, context);
+      await new KeypadMessageManager.Builder().send(
+        "interaction",
+        interaction,
+        {
+          callback: (amount) => {
+            console.log(amount);
+            context.currentPage = amount;
+            this.updateButtons(interaction, context);
+          },
+          max: context.size - 1,
         },
-        max: context.size - 1,
-      });
+      );
     } else {
       const number = interaction.customId.replaceAll("page_count_", "");
       context.currentPage += Number(number);
@@ -69,7 +73,6 @@ export default class PaginationManager {
 
   static async start(size: number, interaction: Discord.RepliableInteraction) {
     const message = await interaction.editReply({ content: "loading..." });
-
     const context = new PaginationContext(size, message.id, this.main);
     await interaction.editReply({
       content: null,

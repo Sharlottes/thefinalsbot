@@ -3,14 +3,24 @@ import MessageManager, { MessageData } from "./MessageManager";
 import PColors from "@/constants/PColors";
 import MessageBuilder from "./MessageBuilder";
 
+export interface ErrorMessageOptions {
+  description?: string;
+  footer?: [string, string];
+}
 export default class ErrorMessageManager extends MessageManager {
   public constructor(
     message: Discord.Message,
     messageData: MessageData,
-    { description, footer }: { description: string; footer?: [string, string] },
+    _options: ErrorMessageOptions,
   ) {
     super(message, messageData);
-    this.messageData.embeds = [
+  }
+
+  public static override preSetupMessageData(
+    messageData: MessageData,
+    { description, footer }: ErrorMessageOptions,
+  ): MessageData {
+    messageData.embeds = [
       new Discord.EmbedBuilder()
         .setColor(PColors.error)
         .setTitle("이런!")
@@ -24,7 +34,8 @@ export default class ErrorMessageManager extends MessageManager {
             : null,
         ),
     ];
+    return messageData;
   }
 
-  public static override Builder = new MessageBuilder(ErrorMessageManager);
+  public static override Builder = MessageBuilder(ErrorMessageManager);
 }

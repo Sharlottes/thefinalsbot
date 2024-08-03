@@ -1,5 +1,5 @@
 import InteractionObserver from "@/core/InteractionObserver";
-import { ButtonBuilder, ButtonInteraction, ButtonStyle } from "discord.js";
+import { ButtonBuilder, ButtonStyle } from "discord.js";
 
 export interface ButtonComponentOptions {
   onClick: (interaction: Discord.ButtonInteraction) => unknown;
@@ -19,7 +19,7 @@ export default class ButtonComponent
     data: Partial<Discord.InteractionButtonComponentData> &
       ButtonComponentOptions,
   ) {
-    super(data);
+    super({ ...data });
     this.options = data;
 
     this.onClick = data.onClick;
