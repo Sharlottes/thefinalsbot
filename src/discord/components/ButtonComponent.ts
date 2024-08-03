@@ -44,11 +44,12 @@ export default class ButtonComponent
   ) {
     return new this({
       onClick: callback,
+      ...options,
+      style: options.style ?? ButtonStyle.Primary,
       customId:
         (options.label?.replaceAll(/\s/g, "-") || "") +
         (options.emoji?.toString() || "") +
         options.customId!,
-      ...options,
     });
   }
 }
