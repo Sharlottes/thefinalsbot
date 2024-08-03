@@ -44,7 +44,6 @@ export default class PaginationManager {
         interaction,
         {
           callback: (amount) => {
-            console.log(amount);
             context.currentPage = amount;
             this.updateButtons(interaction, context);
           },
