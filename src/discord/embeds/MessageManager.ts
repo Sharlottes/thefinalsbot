@@ -26,7 +26,7 @@ export default class MessageManager {
   public async remove() {
     if (!this.message)
       throw new Error("보내지지 않은 메시지는 삭제할 수 없습니다!");
-    return await this.message.delete();
+    await this.message.delete();
   }
 
   public static preSetupMessageData(

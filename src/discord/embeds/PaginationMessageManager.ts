@@ -1,5 +1,6 @@
+import { TextInputResolver } from "@/discord/embeds/inputs/InputResolvers";
+import PrimitiveInputMessageManager from "@/discord/embeds/inputs/PrimitiveInputMessageManager";
 import ButtonComponent from "@/discord/components/ButtonComponent";
-import KeypadMessageManager from "@/discord/embeds/KeypadMessageManager";
 import MessageBuilder from "@/discord/embeds/MessageBuilder";
 import MessageManager, { MessageData } from "@/discord/embeds/MessageManager";
 import { ActionRowBuilder, ButtonStyle } from "discord.js";
@@ -41,12 +42,7 @@ export default class PaginationMessageManager extends MessageManager {
   }
 
   private async updateChanges() {
-    const comps: Discord.MessageEditOptions["components"] =
-      this.message.components;
-    comps[0] = this.buildButtons().toJSON();
-    await this.message.edit({
-      components: comps,
-    });
+    this.messageData.components[0] = this.buildButtons();
     this.events.emit("change");
   }
 
@@ -63,6 +59,18 @@ export default class PaginationMessageManager extends MessageManager {
               style: ButtonStyle.Secondary,
             },
             (interaction) => {
+              new PrimitiveInputMessageManager.Builder().send(
+                "interaction",
+                interaction,
+                {
+                  inputResolver: new TextInputResolver(),
+                  onConfirm: (amount) => {
+                    this.currentPage = +amount;
+                    this.updateChanges();
+                  },
+                },
+              );
+              /*
               new KeypadMessageManager.Builder().send(
                 "interaction",
                 interaction,
@@ -74,6 +82,7 @@ export default class PaginationMessageManager extends MessageManager {
                   max: this.size - 1,
                 },
               );
+              */
             },
           ),
         );
