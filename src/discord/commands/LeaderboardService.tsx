@@ -6,14 +6,14 @@ import {
 } from "discord.js";
 import { Slash, SlashOption, Discord } from "discordx";
 import { StatusCodes } from "http-status-codes";
-import ErrorMessageManager from "../embeds/ErrorMessageManager";
+import ErrorMessageManager from "../messageManagers/ErrorMessageManager";
 import Vars from "@/Vars";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
 import colors from "@radix-ui/colors";
 import { Fragment } from "react";
 import PColors from "@/constants/PColors";
-import PaginationMessageManager from "../embeds/PaginationMessageManager";
+import PaginationMessageManager from "../messageManagers/PaginationMessageManager";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 
 const validVersions = [

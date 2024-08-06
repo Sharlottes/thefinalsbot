@@ -1,7 +1,7 @@
 import { InputMessageManager, InputOptions } from "./InputMessageManager";
 import { PrimitiveInputType, PrimitiveInputResolver } from "./InputResolvers";
-import MessageBuilder from "@/discord/embeds/MessageBuilder";
-import { MessageData } from "@/discord/embeds/MessageManager";
+import MessageBuilder from "@/discord/messageManagers/MessageBuilder";
+import { MessageData } from "@/discord/messageManagers/MessageManager";
 
 export interface ArrayInputOptions<PT extends PrimitiveInputType>
   extends InputOptions<PT> {

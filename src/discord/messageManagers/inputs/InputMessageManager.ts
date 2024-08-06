@@ -9,7 +9,9 @@ import {
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import Vars from "@/Vars";
 import { PrimitiveInputType, PrimitiveInputResolver } from "./InputResolvers";
-import MessageManager, { MessageData } from "@/discord/embeds/MessageManager";
+import MessageManager, {
+  MessageData,
+} from "@/discord/messageManagers/MessageManager";
 
 export interface InputOptions<
   PT extends PrimitiveInputType,

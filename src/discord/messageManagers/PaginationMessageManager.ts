@@ -1,8 +1,10 @@
-import { TextInputResolver } from "@/discord/embeds/inputs/InputResolvers";
-import PrimitiveInputMessageManager from "@/discord/embeds/inputs/PrimitiveInputMessageManager";
+import { TextInputResolver } from "@/discord/messageManagers/inputs/InputResolvers";
+import PrimitiveInputMessageManager from "@/discord/messageManagers/inputs/PrimitiveInputMessageManager";
 import ButtonComponent from "@/discord/components/ButtonComponent";
-import MessageBuilder from "@/discord/embeds/MessageBuilder";
-import MessageManager, { MessageData } from "@/discord/embeds/MessageManager";
+import MessageBuilder from "@/discord/messageManagers/MessageBuilder";
+import MessageManager, {
+  MessageData,
+} from "@/discord/messageManagers/MessageManager";
 import { ActionRowBuilder, ButtonStyle } from "discord.js";
 import EventEmitter from "node:events";
 import TypedEmitter from "typed-emitter";

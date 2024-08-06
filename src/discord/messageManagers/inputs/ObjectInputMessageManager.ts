@@ -3,8 +3,8 @@ import { InputMessageManager, InputOptions } from "./InputMessageManager";
 import { PrimitiveInputType, PrimitiveInputResolver } from "./InputResolvers";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import Vars from "@/Vars";
-import MessageBuilder from "@/discord/embeds/MessageBuilder";
-import { MessageData } from "@/discord/embeds/MessageManager";
+import MessageBuilder from "@/discord/messageManagers/MessageBuilder";
+import { MessageData } from "@/discord/messageManagers/MessageManager";
 
 export default class ObjectInputMessageManager<
   PT extends PrimitiveInputType,

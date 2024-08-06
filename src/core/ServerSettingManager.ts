@@ -12,10 +12,10 @@ import {
   InputResolvers,
   PrimitiveInputResolver,
   PrimitiveInputType,
-} from "../discord/embeds/inputs/InputResolvers";
-import ArrayInputMessageManager from "@/discord/embeds/inputs/ArrayInputMessageManager";
-import PrimitiveInputMessageManager from "@/discord/embeds/inputs/PrimitiveInputMessageManager";
-import ObjectInputMessageManager from "@/discord/embeds/inputs/ObjectInputMessageManager";
+} from "../discord/messageManagers/inputs/InputResolvers";
+import ArrayInputMessageManager from "@/discord/messageManagers/inputs/ArrayInputMessageManager";
+import PrimitiveInputMessageManager from "@/discord/messageManagers/inputs/PrimitiveInputMessageManager";
+import ObjectInputMessageManager from "@/discord/messageManagers/inputs/ObjectInputMessageManager";
 
 const channelMap: Record<
   keyof ServerSettingData["channels"],
