@@ -66,25 +66,18 @@ export default class PaginationMessageManager extends MessageManager {
                 interaction,
                 {
                   inputResolver: new TextInputResolver(),
+                  textValidators: [
+                    {
+                      callback: (value) => value.match(/^\d+$/) !== null,
+                      invalidMessage: "숫자만 가능합니다.",
+                    },
+                  ],
                   onConfirm: (amount) => {
                     this.currentPage = +amount;
                     this.updateChanges();
                   },
                 },
               );
-              /*
-              new KeypadMessageManager.Builder().send(
-                "interaction",
-                interaction,
-                {
-                  callback: (amount) => {
-                    this.currentPage = amount;
-                    this.updateChanges();
-                  },
-                  max: this.size - 1,
-                },
-              );
-              */
             },
           ),
         );
