@@ -70,7 +70,13 @@ export default class PaginationMessageManager extends MessageManager {
                   textValidators: [
                     {
                       callback: (value) => value.match(/^\d+$/) !== null,
-                      invalidMessage: "숫자만 가능합니다.",
+                      invalidMessage: "자연수만 가능합니다.",
+                    },
+                  ],
+                  valueValidators: [
+                    {
+                      callback: (value) => +value >= 1 && +value <= this.size,
+                      invalidMessage: `1부터 ${this.size} 사이의 숫자만 가능합니다.`,
                     },
                   ],
                   onConfirm: (amount) => {

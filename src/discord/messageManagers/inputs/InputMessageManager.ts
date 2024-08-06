@@ -27,7 +27,7 @@ export interface InputOptions<
   }[];
   // * for each resolved value
   valueValidators?: {
-    callback: (value: PT | null | undefined) => boolean;
+    callback: (value: PT) => boolean;
     invalidMessage: string;
   }[];
   onConfirm?: (value: T) => void;
@@ -189,7 +189,7 @@ export abstract class InputMessageManager<
     return true;
   }
 
-  protected valueValidate(v: PT | null | undefined): v is NonNullable<PT> {
+  protected valueValidate(v: PT): v is NonNullable<PT> {
     if (!this.options.valueValidators) return true;
 
     let errmsg = "";
