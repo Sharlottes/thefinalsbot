@@ -49,7 +49,6 @@ export default class PrimitiveInputMessageManager<
       const isValueValid = this.valueValidate(value);
       if (!isValueValid) return;
       message.react("✅");
-      this.responsedMessages.push(message);
       this.handleValue(message, value);
 
       const isConfirmed = await this.askConfirm();

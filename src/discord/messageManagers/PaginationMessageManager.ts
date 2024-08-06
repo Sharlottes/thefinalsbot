@@ -45,6 +45,7 @@ export default class PaginationMessageManager extends MessageManager {
 
   private async updateChanges() {
     this.messageData.components[0] = this.buildButtons();
+    await this.update();
     this.events.emit("change");
   }
 
