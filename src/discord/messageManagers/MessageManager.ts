@@ -17,9 +17,13 @@ export default class MessageManager {
       content: this.messageData.content,
       embeds: this.messageData.embeds,
       components: this.messageData.components,
-      files: this.messageData.files,
       allowedMentions: this.messageData.allowedMentions,
-      attachments: this.messageData.attachments,
+      files: this.messageData.files,
+      // ! 생략 시 전체 유지 -> 기존 파일이 this.messageData.files로 "변경"되는게 아니라 "추가"됨. 이를 방지하기 위해 undefined로 설정
+      attachments:
+        this.messageData.attachments.length > 0
+          ? this.messageData.attachments
+          : undefined,
     });
   }
 

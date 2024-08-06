@@ -119,9 +119,8 @@ export default class LeaderboardService {
         platform,
         version,
       );
-      await interaction.editReply({
-        files: [new AttachmentBuilder(svg!)],
-      });
+      manager.messageData.files = [new AttachmentBuilder(svg!)];
+      await manager.update();
     };
     await handleChange();
     manager.events.on("change", handleChange);
@@ -204,17 +203,16 @@ export default class LeaderboardService {
     );
     const handleChange = async () => {
       const data = result.data.data![manager.$currentPage]; // 순서상 data가 없는건 불가능
-      await interaction.editReply({
-        embeds: [this.buildUserDataEmbed(data)],
-        files:
-          "league" in data
-            ? [
-                new AttachmentBuilder(
-                  `public/images/ranks/${data.league.toLowerCase().replaceAll(" ", "-")}.png`,
-                ),
-              ]
-            : [],
-      });
+      manager.messageData.embeds = [this.buildUserDataEmbed(data)];
+      manager.messageData.files =
+        "league" in data
+          ? [
+              new AttachmentBuilder(
+                `public/images/ranks/${data.league.toLowerCase().replaceAll(" ", "-")}.png`,
+              ),
+            ]
+          : [];
+      await manager.update();
     };
     await handleChange();
     manager.events.on("change", handleChange);
