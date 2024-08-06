@@ -7,7 +7,7 @@ export default <T extends MessageManager, OT = any>(
     messageData: MessageData,
     options: OT,
   ) => T) &
-    Pick<typeof MessageManager, "preSetupMessageData">,
+    Pick<typeof MessageManager, "presetMessageData">,
 ) =>
   class MessageBuilder {
     private messageData: MessageData = Object.create(
@@ -31,7 +31,7 @@ export default <T extends MessageManager, OT = any>(
         | Discord.RepliableInteraction,
       options: OT,
     ) {
-      this.messageData = Manager.preSetupMessageData(
+      this.messageData = await Manager.presetMessageData(
         this.messageData,
         options,
         sender,
@@ -65,10 +65,15 @@ export default <T extends MessageManager, OT = any>(
           );
         }
       })();
-      const manager = new Manager(message, this.messageData, options);
+      const manager = await new Manager(
+        message,
+        this.messageData,
+        options,
+      ).postsetManger();
       if (isEmpty && manager.messageData.content === "wait...") {
         manager.messageData.content = null;
       }
+
       await manager.update();
       return manager;
     }

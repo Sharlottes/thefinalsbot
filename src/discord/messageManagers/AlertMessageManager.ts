@@ -17,7 +17,7 @@ export default class AlertMessageManager extends MessageManager {
     super(message, messageData);
   }
 
-  public static override preSetupMessageData(
+  public static override presetMessageData(
     messageData: MessageData,
     { title, description, footer }: AlertMessageOptions,
   ) {

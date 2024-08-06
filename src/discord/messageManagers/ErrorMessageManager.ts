@@ -16,10 +16,10 @@ export default class ErrorMessageManager extends MessageManager {
     super(message, messageData);
   }
 
-  public static override preSetupMessageData(
+  public static override presetMessageData(
     messageData: MessageData,
     { description, footer }: ErrorMessageOptions,
-  ): MessageData {
+  ) {
     messageData.embeds = [
       new Discord.EmbedBuilder()
         .setColor(PColors.error)

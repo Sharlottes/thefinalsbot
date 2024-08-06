@@ -64,7 +64,11 @@ export abstract class InputMessageManager<
     this.options = options;
     this.rCollector = this.message.createReactionCollector();
     this.mCollector = this.message.channel.createMessageCollector();
-    this.setupCollectors();
+  }
+
+  public override async postsetManger() {
+    await this.setupCollectors();
+    return super.postsetManger();
   }
 
   public override async remove() {

@@ -40,7 +40,11 @@ export default class PaginationMessageManager extends MessageManager {
   ) {
     super(message, messageData);
     this.size = options.size;
-    this.updateChanges();
+  }
+
+  public override async postsetManger() {
+    await this.updateChanges();
+    return super.postsetManger();
   }
 
   private async updateChanges() {

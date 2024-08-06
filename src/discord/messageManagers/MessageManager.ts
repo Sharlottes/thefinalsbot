@@ -33,14 +33,24 @@ export default class MessageManager {
     await this.message.delete();
   }
 
-  public static preSetupMessageData(
+  /**
+   * MessageManger 생성 전 messageData에 대한 설정이 필요할 때 사용
+   */
+  public static presetMessageData(
     messageData: MessageData,
     _options: any,
     sender:
       | Discord.PartialTextBasedChannelFields
       | Discord.RepliableInteraction,
-  ) {
+  ): MaybePromise<MessageData> {
     return messageData;
+  }
+
+  /**
+   * MessageManager 생성 후 비동기적인 작업이 필요할 때 사용
+   */
+  public postsetManger(): MaybePromise<MessageManager> {
+    return this;
   }
 
   public static Builder = MessageBuilder(MessageManager);
