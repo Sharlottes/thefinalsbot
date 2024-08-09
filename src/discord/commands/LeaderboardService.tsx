@@ -17,7 +17,7 @@ import PaginationMessageManager from "../messageManagers/PaginationMessageManage
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 
 const validVersions = [
-  "b1",
+  "cb1",
   "closedbeta1",
   "cb2",
   "closedbeta2",
