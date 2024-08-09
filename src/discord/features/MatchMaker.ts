@@ -45,10 +45,10 @@ export default class MatchMaker {
   public async init(): Promise<void> {
     console.time("initalizing MatchMaker...");
 
-    this.#matchMakingMessage = await FixedMessageRegister.sendMessage(
+    /* this.#matchMakingMessage = await FixedMessageRegister.sendMessage(
       Vars.matchMakingAnnounceChannel,
       "waiting...",
-    );
+    );*/
     await this.rerender();
 
     console.timeEnd("initalizing MatchMaker...");

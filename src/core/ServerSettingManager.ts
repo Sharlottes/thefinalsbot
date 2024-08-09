@@ -1,30 +1,56 @@
-import ServerSettingModel from "@/models/ServerSetting";
-import autoDeleteMessage from "@/utils/autoDeleteMessage";
+import ServerSettingModel, {
+  ChannelsSchema,
+  ServerSettingSchema,
+} from "@/models/ServerSetting";
 import Vars from "@/Vars";
-import { Channel } from "diagnostics_channel";
 import {
   ActionRowBuilder,
   bold,
   ButtonBuilder,
   ButtonStyle,
   ChannelType,
-  MessageCollector,
   OverwriteType,
 } from "discord.js";
-import { Guild } from "discordx";
+import { TextInput, ArrayInput, ObjectInput } from "./Inputs";
+import {
+  InputResolvers,
+  PrimitiveInputResolver,
+  PrimitiveInputType,
+} from "./InputResolvers";
 
-const channelNames: Record<keyof ServerSettingData["channels"], string> = {
-  dmLogChannelId: "DM 로그 채널",
-  matchmakedCategoryId: "매치메이킹된 방들이 들어갈 카테고리",
-  matchmakingAnnounceChannelId: "매치메이킹 고정임베드 채널",
-  matchmakingWaitingChannelId: "매치메이킹 대기방 채널",
-  roomMakingAnnounceChannels: "방 생성 고정임베드 채널",
-  invalidInviteGuilds: "초대링크 차단된 서버들",
+const channelMap: Record<
+  keyof ServerSettingData["channels"],
+  { name: string; type: keyof typeof InputResolvers }
+> = {
+  dmLogChannelId: { name: "DM 로그 채널", type: "channel" },
+  matchmakedCategoryId: {
+    name: "매치메이킹된 방들이 들어갈 카테고리",
+    type: "category",
+  },
+  matchmakingAnnounceChannelId: {
+    name: "매치메이킹 고정임베드 채널",
+    type: "channel",
+  },
+  matchmakingWaitingChannelId: {
+    name: "매치메이킹 대기방 채널",
+    type: "channel",
+  },
+  invalidInviteGuilds: { name: "초대링크 차단된 서버들", type: "guild" },
+  roomMakingAnnounceChannels: {
+    name: "방 생성 고정임베드 채널",
+    type: "channel",
+  },
 };
 export default class ServerSettingManager {
+  static #main: ServerSettingManager;
+  public static get main(): ServerSettingManager {
+    return (
+      this.#main ?? (ServerSettingManager.#main = new ServerSettingManager())
+    );
+  }
   private readonly settingMap: Map<string, ServerSettingData> = new Map();
-
-  public getSetting(guildId: string): ServerSettingData {
+  private constructor() {}
+  public getSetting(guildId: string = Vars.mainGuild.id): ServerSettingData {
     return this.settingMap.get(guildId)!;
   }
 
@@ -34,14 +60,14 @@ export default class ServerSettingManager {
       guildId: guild.id,
       botId: client.user!.id,
     });
-    if (true) {
-      //  if (!serverSettings) {
-      this.requestSettingInit(guild, client);
+    if (serverSettings) {
+      this.settingMap.set(guild.id, serverSettings);
+    } else {
+      await this.requestSettingInit(guild);
     }
-    // this.settingMap.set(guild.id, serverSettings);
   }
 
-  async requestSettingInit(guild: Discord.Guild, client: DiscordX.Client) {
+  async requestSettingInit(guild: Discord.Guild) {
     const channel = await guild.channels.create({
       type: ChannelType.GuildText,
       name: "server init",
@@ -62,25 +88,28 @@ export default class ServerSettingManager {
         },
       ],
     });
-
-    channel.send("서버 설정이 없습니다. 설정을 초기화합니다...");
-    const setting = new ServerSettingModel({
-      guildId: guild.id,
-      botId: client.user!.id,
-      channels: {
-        dmLogChannelId: "",
-        matchmakedCategoryId: "",
-        matchmakingAnnounceChannelId: "",
-        matchmakingWaitingChannelId: "",
-        roomMakingAnnounceChannels: {},
-        invalidInviteGuilds: [],
-      },
-    });
-    await setting.save();
+    channel.send("서버 설정 준비중...");
+    const setting =
+      (await ServerSettingModel.findOne({
+        guildId: guild.id,
+        botId: Vars.client.user!.id,
+      })) ??
+      new ServerSettingModel({
+        guildId: guild.id,
+        botId: Vars.client.user!.id,
+        channels: {
+          dmLogChannelId: "",
+          matchmakedCategoryId: "",
+          matchmakingAnnounceChannelId: "",
+          matchmakingWaitingChannelId: "",
+          roomMakingAnnounceChannels: {},
+          invalidInviteGuilds: [],
+        },
+      });
     const interaction = await channel
       .send({
         content:
-          "서버 설정 초기화가 완료되었습니다.\n세부 설정 버튼을 눌러 서버 설정을 완료하세요.",
+          "서버 설정이 준비되었습니다.\n세부 설정 버튼을 눌러 서버 설정을 완료하세요.",
         components: [
           new ActionRowBuilder<ButtonBuilder>().addComponents(
             new ButtonBuilder()
@@ -93,177 +122,80 @@ export default class ServerSettingManager {
       .then((msg) => msg.awaitMessageComponent());
 
     await interaction.deferReply();
-    const render = () => interaction.editReply(msg);
+    const render = () => interaction.editReply(msg.join("\n"));
 
-    let msg = "* 세부 설정을 시작합니다...";
+    let msg = ["* 세부 설정을 시작합니다..."];
     await render();
-    for (const [key, name] of Object.entries(setting.channels)) {
-      msg += `\n* ${bold(channelNames[key as keyof ServerSettingData["channels"]])}을(를) 설정하세요.`;
+    for (const key of Object.keys(ChannelsSchema.obj) as unknown as Array<
+      keyof ServerSettingData["channels"]
+    >) {
+      const i =
+        msg.push(`* ${bold(channelMap[key].name)}을(를) 설정하세요.`) - 1;
+
       await render();
+      const [value, str] = await this.resolveSettingInput(
+        channel,
+        channelMap[key].type,
+        key,
+      );
+      if (!value) continue;
+      // @ts-ignore
+      setting.channels[key] = value;
+
+      msg[i] += `..   ${str}`;
     }
+    await setting.save();
+    msg.push("* 설정이 완료되었습니다!");
+    await render();
   }
 
-  private resolveSettingInput<T>(
+  private async resolveSettingInput(
+    channel: Discord.TextBasedChannel,
+    type: keyof typeof InputResolvers,
     key: keyof ServerSettingData["channels"],
-    value: T | Record<string, T> | T[] | null | undefined,
-  ) {}
-}
+    value?: string | string[] | Record<string, string>,
+  ): Promise<[string | string[] | Record<string, string> | undefined, string]> {
+    const valueType = ChannelsSchema.obj[key];
+    const resolver: PrimitiveInputResolver<PrimitiveInputType> =
+      InputResolvers[type];
 
-abstract class Input<
-  T extends string | Array<string> | Record<string, string>,
-  OT = {},
-> {
-  protected msg!: Discord.Message;
-  public value: T | undefined;
+    if (!valueType) return [undefined, ""];
+    if (valueType === String) {
+      const input = new TextInput(channel, resolver);
+      if (value) input.value = value as string;
+      await input.start();
+      return [this.serializeValue(input.value), input.getValueString()];
+    } else if (Array.isArray(valueType)) {
+      const input = new ArrayInput(channel, resolver);
+      if (value) input.value = value as string[];
+      await input.start();
 
-  abstract askInput(): Promise<T>;
-
-  constructor(
-    protected readonly channel: Discord.TextBasedChannel,
-    protected readonly options: OT & {
-      validator?: { callback: (value: T) => boolean; invalidMessage: string };
-    },
-  ) {}
-
-  protected async askConfirm(): Promise<boolean> {
-    this.msg = await this.msg.edit({
-      content: `입력 완료: ${this.getValueString()}로 확정할까요?`,
-      components: [
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setCustomId("input_yes")
-            .setLabel("예")
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId("input_no")
-            .setLabel("아니요")
-            .setStyle(ButtonStyle.Secondary),
-        ),
-      ],
-    });
-    const interaction = await this.msg.awaitMessageComponent();
-    if (interaction.customId == "input_yes") {
-      await Promise.all([
-        autoDeleteMessage(interaction.reply("입력이 완료되었습니다.")),
-        this.msg.delete(),
-      ]);
-      return true;
+      return [
+        input.value.map((v) => this.serializeValue(v)),
+        input.getValueString(),
+      ];
     } else {
-      await autoDeleteMessage(interaction.reply("입력이 취소되었습니다."));
-      return false;
+      const input = new ObjectInput(channel, resolver);
+      if (value) input.value = value as Record<string, string>;
+      await input.start();
+      return [
+        Object.fromEntries(
+          Object.entries(input.value).map(([k, v]) => [
+            k,
+            this.serializeValue(v),
+          ]),
+        ),
+        input.getValueString(),
+      ];
     }
   }
 
-  protected getValueString() {
-    if (this.value === undefined) return "없음";
-    else if (typeof this.value === "string") return this.value;
-    else if (Array.isArray(this.value)) return this.value.join(", ");
-    else {
-      return Object.entries(this.value)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(", ");
-    }
-  }
+  private serializeValue(value: PrimitiveInputType) {
+    if (typeof value === "string") return value;
+    if ("id" in value) return value.id;
 
-  protected async validate() {
-    if (this.value === undefined) {
-      await this.msg.edit("입력 실패. 재시도합니다.");
-      return false;
-    } else if (
-      this.options.validator &&
-      !this.options.validator.callback(this.value)
-    ) {
-      await this.msg.edit(this.options.validator.invalidMessage);
-      return false;
-    }
-    return true;
-  }
-}
-
-class TextInput extends Input<string> {
-  public async askInput(): Promise<string> {
-    while (true) {
-      this.msg = await this.channel.send("입력 대기중...");
-      this.value = await this.channel
-        .awaitMessages({
-          max: 1,
-          ...this.options,
-        })
-        .then((messages) => messages.first()?.content);
-
-      const isValid = await this.validate();
-      if (!isValid) continue;
-      const isConfirmed = await this.askConfirm();
-      if (!isConfirmed) continue;
-      return this.value!;
-    }
-  }
-}
-
-interface ArrayInputOptions {
-  maxLength?: number;
-}
-class ArrayInput extends Input<Array<string>, ArrayInputOptions> {
-  async askInput(): Promise<string[]> {
-    this.value = [];
-
-    while (true) {
-      this.msg = await this.channel.send(`입력 대기중...
-* 순서대로 메시지를 보내주세요. ${this.options.maxLength === undefined ? "" : `(${this.options.maxLength}개까지 가능)`}
-* 중도 편집
-* 입력을 마치려면 👍이모지를 눌러주세요.
-        `);
-      await this.msg.react("👍");
-      await new Promise<void>((resolve) => {
-        const rCollector = this.msg.createReactionCollector();
-
-        const mCollector = this.channel.createMessageCollector();
-        rCollector.on("collect", (reaction) => {
-          if (reaction.emoji.name !== "👍") return;
-          resolve();
-        });
-        mCollector.on("collect", (msg) => {
-          this.value!.push(msg.content);
-        });
-      });
-
-      const isValid = await this.validate();
-      if (!isValid) continue;
-      const isConfirmed = await this.askConfirm();
-      if (!isConfirmed) continue;
-      return this.value!;
-    }
-  }
-}
-
-class ObjectInput extends Input<Record<string, string>> {
-  async askInput(): Promise<Record<string, string>> {
-    this.value = {};
-
-    while (true) {
-      this.msg = await this.channel.send(`입력 대기중...
-* 순서대로 메시지를 보내주세요.
-* 입력을 마치려면 👍이모지를 눌러주세요.
-        `);
-      await this.msg.react("👍");
-      await new Promise<void>((resolve) => {
-        const rCollector = this.msg.createReactionCollector();
-
-        const mCollector = this.channel.createMessageCollector();
-        rCollector.on("collect", (reaction) => {
-          if (reaction.emoji.name !== "👍") return;
-          resolve();
-        });
-        mCollector.on("collect", (msg) => {
-          this.value!.push(msg.content);
-        });
-      });
-
-      const isValid = await this.validate();
-      if (!isValid) continue;
-      const isConfirmed = await this.askConfirm();
-      if (!isConfirmed) continue;
-      return this.value!;
-    }
+    throw new Error(
+      "there are non-implemented input value in serializeValue()!",
+    );
   }
 }

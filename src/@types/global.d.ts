@@ -6,3 +6,5 @@ interface Profile {
   weapon?: string;
   gadget: string[];
 }
+
+type MaybePromise<T> = T | Promise<T>;
