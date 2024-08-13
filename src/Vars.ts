@@ -1,5 +1,5 @@
 import { ChannelType } from "discord.js";
-import { Server } from "http";
+import ServerSettingModel from "./models/ServerSetting";
 import ServerSettingManager from "./core/ServerSettingManager";
 
 export default class Vars {
@@ -15,6 +15,11 @@ export default class Vars {
 
   public static async init(client: DiscordX.Client): Promise<void> {
     Vars.client = client;
+    const serverSettings = await ServerSettingModel.findOne({
+      guildId: process.env.TEST_GUILD_ID,
+      botId: client.user!.id,
+    });
+    if (!serverSettings) throw new Error("ServerSettings not found");
     await Promise.all([
       client.guilds
         .fetch(process.env.TEST_GUILD_ID)
