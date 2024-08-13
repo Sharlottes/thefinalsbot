@@ -34,7 +34,7 @@ const validVersions = [
   "season3worldtour",
 ];
 const validPlatforms = ["steam", "xbox", "psn", "crossplay"];
-const rank_color = [0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8, 0xe0115f];
+const rankColor = [0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8, 0xe0115f];
 
 @Discord()
 export default class LeaderboardService {
