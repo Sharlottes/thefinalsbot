@@ -6,7 +6,6 @@ import {
 } from "discord.js";
 import { Slash, SlashOption, Discord } from "discordx";
 import { StatusCodes } from "http-status-codes";
-import ErrorMessageManager from "../messageManagers/ErrorMessageManager";
 import Vars from "@/Vars";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
@@ -14,7 +13,6 @@ import colors from "@radix-ui/colors";
 import { Fragment } from "react";
 import PColors from "@/constants/PColors";
 import PaginationMessageManager from "../messageManagers/PaginationMessageManager";
-import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import SlashOptionBuilder from "@/utils/SlashOptionBuilder";
 
 const validVersions = [
@@ -40,7 +38,7 @@ const rankColor = [0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8, 0xe0115f];
 const VersionParameter = SlashOptionBuilder.create({
   name: "버전",
   description:
-    "리더보드 시즌을 선택합니다. (b1, cb2, ob, s1, s2, live, s3, s3worldtour)",
+    "리더보드 시즌을 선택합니다. (cb1, cb2, ob, s1, s2, live, s3, s3worldtour)",
   required: false,
   type: ApplicationCommandOptionType.String,
   default: "s3",
