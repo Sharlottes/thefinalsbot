@@ -15,6 +15,7 @@ import { Fragment } from "react";
 import PColors from "@/constants/PColors";
 import PaginationMessageManager from "../messageManagers/PaginationMessageManager";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
+import SlashOptionBuilder from "@/utils/SlashOptionBuilder";
 
 const validVersions = [
   "cb1",
@@ -36,6 +37,37 @@ const validVersions = [
 const validPlatforms = ["steam", "xbox", "psn", "crossplay"];
 const rankColor = [0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8, 0xe0115f];
 
+const VersionParameter = SlashOptionBuilder.create({
+  name: "버전",
+  description:
+    "리더보드 시즌을 선택합니다. (b1, cb2, ob, s1, s2, live, s3, s3worldtour)",
+  required: false,
+  type: ApplicationCommandOptionType.String,
+  default: "s3",
+  validators: [
+    [
+      (version) => Boolean(!version || validVersions.includes(version)),
+      `잘못된 버전입니다.
+가능한 버전 값: ${validVersions.join(", ")}`,
+    ],
+  ],
+});
+
+const PlatformParameter = SlashOptionBuilder.create({
+  name: "플랫폼",
+  description: "리더보드 플랫폼을 선택합니다. (crossplay, steam, xbox, psn)",
+  required: false,
+  type: ApplicationCommandOptionType.String,
+  default: "crossplay",
+  validators: [
+    [
+      (platform) => Boolean(!platform || validPlatforms.includes(platform)),
+      `잘못된 플랫폼입니다.
+가능한 플랫폼 값: ${validPlatforms.join(", ")}`,
+    ],
+  ],
+});
+
 @Discord()
 export default class LeaderboardService {
   @Slash({
@@ -43,46 +75,13 @@ export default class LeaderboardService {
     description: "the finals의 모든 리더보드를 조회합니다.",
   })
   async leaderboard(
-    @SlashOption({
-      name: "버전",
-      description:
-        "리더보드 시즌을 선택합니다. (b1, cb2, ob, s1, s2, live, s3, s3worldtour)",
-      required: false,
-      type: ApplicationCommandOptionType.String,
-    })
-    version: string | undefined = "s3",
-    @SlashOption({
-      name: "플랫폼",
-      description:
-        "리더보드 플랫폼을 선택합니다. (crossplay, steam, xbox, psn)",
-      required: false,
-      type: ApplicationCommandOptionType.String,
-    })
-    platform: string | undefined = "crossplay",
+    @SlashOption(VersionParameter)
+    version: string | undefined,
+    @SlashOption(PlatformParameter)
+    platform: string | undefined,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
-    if (version && !validVersions.includes(version)) {
-      await autoDeleteMessage(
-        new ErrorMessageManager.Builder()
-          .send("interaction", interaction, {
-            description: `잘못된 버전입니다.
-가능한 버전 값: ${validVersions.join(", ")}`,
-          })
-          .then((m) => m.message),
-      );
-      return;
-    }
-    if (platform && !validPlatforms.includes(platform)) {
-      await autoDeleteMessage(
-        new ErrorMessageManager.Builder()
-          .send("interaction", interaction, {
-            description: `잘못된 플랫폼입니다.
-가능한 플랫폼 값: ${validPlatforms.join(", ")}`,
-          })
-          .then((m) => m.message),
-      );
-      return;
-    }
+    if (!version || !platform) return;
 
     await interaction.deferReply();
     const result = await fetch(
@@ -137,47 +136,13 @@ export default class LeaderboardService {
       type: ApplicationCommandOptionType.String,
     })
     target: string,
-    @SlashOption({
-      name: "버전",
-      description:
-        "리더보드 시즌을 선택합니다. (b1, cb2, ob, s1, s2, live, s3, s3worldtour)",
-      required: false,
-      type: ApplicationCommandOptionType.String,
-    })
-    version: string | undefined = "s3",
-    @SlashOption({
-      name: "플랫폼",
-      description:
-        "리더보드 플랫폼을 선택합니다. (crossplay, steam, xbox, psn)",
-      required: false,
-      type: ApplicationCommandOptionType.String,
-    })
-    platform: string | undefined = "crossplay",
+    @SlashOption(VersionParameter)
+    version: string | undefined,
+    @SlashOption(PlatformParameter)
+    platform: string | undefined,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
-    if (version && !validVersions.includes(version)) {
-      interaction.editReply("잘못된 버전 값입니다.");
-      await autoDeleteMessage(
-        new ErrorMessageManager.Builder()
-          .send("interaction", interaction, {
-            description: `잘못된 버전입니다.
-가능한 버전 값: ${validVersions.join(", ")}`,
-          })
-          .then((m) => m.message),
-      );
-      return;
-    } else if (platform && !validPlatforms.includes(platform)) {
-      interaction.editReply("잘못된 플랫폼 값입니다.");
-      await autoDeleteMessage(
-        new ErrorMessageManager.Builder()
-          .send("interaction", interaction, {
-            description: `잘못된 플랫폼입니다.
-가능한 플랫폼 값: ${validPlatforms.join(", ")}`,
-          })
-          .then((m) => m.message),
-      );
-      return;
-    }
+    if (!version || !platform) return;
 
     await interaction.deferReply();
     const result = await fetch(

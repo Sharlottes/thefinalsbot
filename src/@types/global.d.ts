@@ -8,7 +8,13 @@ interface Profile {
 }
 
 type MaybePromise<T> = T | Promise<T>;
+type MaybeArray<T> = T | T[];
 
+type Override<
+  Target extends Record<PropertyKey, unknown>,
+  Omits extends keyof Target,
+  NewTypes extends Record<Omits, unknown>,
+> = Omit<Target, Omits> & NewTypes;
 interface InteractiveTypeMap {
   button: Discord.ButtonInteraction;
 }
