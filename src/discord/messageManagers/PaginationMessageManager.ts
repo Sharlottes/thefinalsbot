@@ -1,4 +1,7 @@
-import { TextInputResolver } from "@/discord/messageManagers/inputs/InputResolvers";
+import {
+  PrimitiveInputType,
+  TextInputResolver,
+} from "@/discord/messageManagers/inputs/InputResolvers";
 import PrimitiveInputMessageManager from "@/discord/messageManagers/inputs/PrimitiveInputMessageManager";
 import ButtonComponent from "@/discord/components/ButtonComponent";
 import MessageBuilder from "@/discord/messageManagers/MessageBuilder";
@@ -66,23 +69,23 @@ export default class PaginationMessageManager extends MessageManager {
               style: ButtonStyle.Secondary,
             },
             (interaction) => {
+              const onlyUint = {
+                callback: (value: string) => value.match(/^\d+$/) !== null,
+                invalidMessage: "자연수만 가능합니다.",
+              };
+              const onlyInRange = {
+                callback: (value: PrimitiveInputType) =>
+                  +value >= 1 && +value <= this.size,
+                invalidMessage: `1부터 ${this.size} 사이의 숫자만 가능합니다.`,
+              };
+
               new PrimitiveInputMessageManager.Builder().send(
                 "interaction",
                 interaction,
                 {
                   inputResolver: new TextInputResolver(),
-                  textValidators: [
-                    {
-                      callback: (value) => value.match(/^\d+$/) !== null,
-                      invalidMessage: "자연수만 가능합니다.",
-                    },
-                  ],
-                  valueValidators: [
-                    {
-                      callback: (value) => +value >= 1 && +value <= this.size,
-                      invalidMessage: `1부터 ${this.size} 사이의 숫자만 가능합니다.`,
-                    },
-                  ],
+                  textValidators: [onlyUint],
+                  valueValidators: [onlyInRange],
                   onConfirm: (amount) => {
                     this.currentPage = +amount;
                     this.updateChanges();
