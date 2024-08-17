@@ -204,11 +204,7 @@ export default class LeaderboardService {
               height: "32px",
             }}
           >
-            {data.change == 0
-              ? "0"
-              : data.change > 0
-                ? "+" + data.change
-                : data.change}
+            {data.change > 0 ? "+" + data.change : data.change}
           </p>
         ) : (
           <></>
