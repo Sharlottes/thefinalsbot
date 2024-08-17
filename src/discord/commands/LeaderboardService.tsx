@@ -143,8 +143,9 @@ export default class LeaderboardService {
     if (!version || !platform) return;
 
     await interaction.deferReply();
+    const searchTarget = target === "*" ? "" : target;
     const result = await fetch(
-      `https://api.the-finals-leaderboard.com/v1/leaderboard/${version}/${platform}?name=${target === "*" ? "" : target}`,
+      `https://api.the-finals-leaderboard.com/v1/leaderboard/${version}/${platform}?name=${searchTarget}`,
     )
       .then(async (response) => ({
         status: response.status,
@@ -166,15 +167,14 @@ export default class LeaderboardService {
     );
     const handleChange = async () => {
       const data = result.data.data![manager.$currentPage]; // 순서상 data가 없는건 불가능
+      const rankImgUri =
+        "league" in data
+          ? `public/images/ranks/${data.league.toLowerCase().replaceAll(" ", "-")}.png`
+          : "";
+
       manager.messageData.embeds = [this.buildUserDataEmbed(data)];
       manager.messageData.files =
-        "league" in data
-          ? [
-              new AttachmentBuilder(
-                `public/images/ranks/${data.league.toLowerCase().replaceAll(" ", "-")}.png`,
-              ),
-            ]
-          : [];
+        "league" in data ? [new AttachmentBuilder(rankImgUri)] : [];
       await manager.update();
     };
     await handleChange();
