@@ -57,7 +57,7 @@ export const client = new Client({
 console.time("importing...");
 await importx(
   `${dirname(import.meta.url)}/core/**/*.{ts,js}`,
-  `${dirname(import.meta.url)}/discord/{features,commands}/**/*.{ts,js}`,
+  `${dirname(import.meta.url)}/discord/{features,commands}/**/*.{ts,tsx,js}`,
 );
 console.timeEnd("importing...");
 

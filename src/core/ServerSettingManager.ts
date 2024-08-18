@@ -1,7 +1,4 @@
-import ServerSettingModel, {
-  ChannelsSchema,
-  ServerSettingSchema,
-} from "@/models/ServerSetting";
+import ServerSettingModel, { ChannelsSchema } from "@/models/ServerSetting";
 import Vars from "@/Vars";
 import {
   ActionRowBuilder,
@@ -11,12 +8,14 @@ import {
   ChannelType,
   OverwriteType,
 } from "discord.js";
-import { TextInput, ArrayInput, ObjectInput } from "./Inputs";
 import {
   InputResolvers,
   PrimitiveInputResolver,
   PrimitiveInputType,
-} from "./InputResolvers";
+} from "../discord/messageManagers/inputs/InputResolvers";
+import ArrayInputMessageManager from "@/discord/messageManagers/inputs/ArrayInputMessageManager";
+import PrimitiveInputMessageManager from "@/discord/messageManagers/inputs/PrimitiveInputMessageManager";
+import ObjectInputMessageManager from "@/discord/messageManagers/inputs/ObjectInputMessageManager";
 
 const channelMap: Record<
   keyof ServerSettingData["channels"],
@@ -161,23 +160,45 @@ export default class ServerSettingManager {
 
     if (!valueType) return [undefined, ""];
     if (valueType === String) {
-      const input = new TextInput(channel, resolver);
-      if (value) input.value = value as string;
-      await input.start();
-      return [this.serializeValue(input.value), input.getValueString()];
+      const input = await new PrimitiveInputMessageManager.Builder().send(
+        "channel",
+        channel,
+        {
+          inputResolver: resolver,
+          value: value as string,
+        },
+      );
+      await input.update();
+      return [
+        input.value && this.serializeValue(input.value),
+        input.getValueString(),
+      ];
     } else if (Array.isArray(valueType)) {
-      const input = new ArrayInput(channel, resolver);
-      if (value) input.value = value as string[];
-      await input.start();
+      const input = await new ArrayInputMessageManager.Builder().send(
+        "channel",
+        channel,
+        {
+          inputResolver: resolver,
+          value: value as string[],
+        },
+      );
+      await input.update();
 
       return [
         input.value.map((v) => this.serializeValue(v)),
         input.getValueString(),
       ];
     } else {
-      const input = new ObjectInput(channel, resolver);
-      if (value) input.value = value as Record<string, string>;
-      await input.start();
+      const input = await new ObjectInputMessageManager.Builder().send(
+        "channel",
+        channel,
+        {
+          inputResolver: resolver,
+          value: value as Record<string, string>,
+        },
+      );
+      await input.update();
+
       return [
         Object.fromEntries(
           Object.entries(input.value).map(([k, v]) => [

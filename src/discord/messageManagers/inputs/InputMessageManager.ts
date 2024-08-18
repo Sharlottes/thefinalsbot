@@ -4,12 +4,22 @@ import {
   ButtonStyle,
   Colors,
   EmbedBuilder,
+  Message,
 } from "discord.js";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import Vars from "@/Vars";
 import { PrimitiveInputType, PrimitiveInputResolver } from "./InputResolvers";
+import MessageManager, {
+  MessageData,
+} from "@/discord/messageManagers/MessageManager";
 
-export interface InputOptions<PT extends PrimitiveInputType> {
+export interface InputOptions<
+  PT extends PrimitiveInputType,
+  T extends PT | Array<PT> | Record<string, PT> =
+    | PT
+    | Array<PT>
+    | Record<string, PT>,
+> {
   // * for each text input
   textValidators?: {
     callback: (value: string) => boolean;
@@ -17,83 +27,96 @@ export interface InputOptions<PT extends PrimitiveInputType> {
   }[];
   // * for each resolved value
   valueValidators?: {
-    callback: (value: PT | null | undefined) => boolean;
+    callback: (value: PT) => boolean;
     invalidMessage: string;
   }[];
+  onConfirm?: (value: T) => void;
 }
-export abstract class Input<
+
+export abstract class InputMessageManager<
   PT extends PrimitiveInputType,
-  T extends PT | Array<PT> | Record<string, PT>,
+  T extends PT | Array<PT> | Record<string, PT> | undefined,
   OT extends InputOptions<PT> = InputOptions<PT>,
-> {
-  public value!: T;
-  protected msg!: Discord.Message;
+> extends MessageManager {
+  public value: T;
   protected rCollector!: Discord.ReactionCollector;
   protected mCollector!: Discord.MessageCollector;
   // * for cleanup messages
   protected readonly responsedMessages: Discord.Message[] = [];
 
-  constructor(
-    protected readonly type: "primitive" | "array" | "object",
-    protected readonly channel: Discord.TextBasedChannel,
-    protected readonly inputResolver: PrimitiveInputResolver<PT>,
-    protected readonly options: OT,
-  ) {}
+  protected readonly type: "primitive" | "array" | "object";
+  protected readonly inputResolver: PrimitiveInputResolver<PT>;
+  protected readonly options: OT;
 
-  protected abstract updateMessage(): Promise<void>;
+  constructor(
+    message: Discord.Message,
+    messageData: MessageData,
+    options: {
+      type: "primitive" | "array" | "object";
+      inputResolver: PrimitiveInputResolver<PT>;
+      value: T;
+    } & OT,
+  ) {
+    super(message, messageData);
+    this.value = options.value;
+    this.type = options.type;
+    this.inputResolver = options.inputResolver;
+    this.options = options;
+    this.rCollector = this.message.createReactionCollector();
+    this.mCollector = this.message.channel.createMessageCollector();
+  }
+
+  public override async postsetManger() {
+    await this.setupCollectors();
+    return super.postsetManger();
+  }
+
+  public override async remove() {
+    await Promise.all([
+      this.message.delete(),
+      ...this.responsedMessages.map((m) => m.delete()),
+    ]);
+  }
+
   protected abstract handleValue(
     message: Discord.Message,
     value: PT,
   ): Promise<void>;
 
-  public async start() {
-    await this.updateMessage();
-    this.rCollector = this.msg.createReactionCollector();
-    this.mCollector = this.channel.createMessageCollector();
-    await this.awaitCollectors();
-    this.rCollector.stop();
-    this.mCollector.stop();
-    await Promise.all([
-      this.msg.delete(),
-      ...this.responsedMessages.map((m) => m.delete()),
-    ]);
+  protected async setupCollectors() {
+    this.rCollector.on("collect", async (reaction) => {
+      if (reaction.emoji.name !== "👍" || reaction.count == 1) return;
+      if (!this.value) {
+        autoDeleteMessage(
+          this.message.channel.send("에러: 입력된 값이 없습니다."),
+          1500,
+        );
+        return;
+      }
+      const isConfirmed = await this.askConfirm();
+      if (!isConfirmed) return;
+      this.rCollector.stop();
+      this.mCollector.stop();
+      this.options.onConfirm?.(this.value);
+      this.remove();
+    });
+    this.mCollector.on("collect", async (message) => {
+      if (message.author.id == Vars.client.user!.id) return;
+      this.responsedMessages.push(message);
+      const isTextValid = this.textValidate(message.content);
+      if (!isTextValid) return;
+      const value = await this.inputResolver.resolveInput(message);
+      if (!value) return;
 
-    return this.value!;
-  }
-
-  protected async awaitCollectors() {
-    await new Promise<void>((resolve) => {
-      this.rCollector.on("collect", async (reaction) => {
-        if (reaction.emoji.name !== "👍" || reaction.count == 1) return;
-        if (!this.value) {
-          autoDeleteMessage(
-            this.channel.send("에러: 입력된 값이 없습니다."),
-            1500,
-          );
-          return;
-        }
-        const isConfirmed = await this.askConfirm();
-        if (!isConfirmed) return;
-        resolve();
-      });
-      this.mCollector.on("collect", async (message) => {
-        if (message.author.id == Vars.client.user!.id) return;
-        this.responsedMessages.push(message);
-        const isTextValid = this.textValidate(message.content);
-        if (!isTextValid) return;
-        const value = await this.inputResolver.resolveInput(message);
-        if (!value) return;
-
-        const isValueValid = this.valueValidate(value);
-        if (!isValueValid) return;
-        message.react("✅");
-        this.handleValue(message, value);
-      });
+      const isValueValid = this.valueValidate(value);
+      if (!isValueValid) return;
+      message.react("✅");
+      this.handleValue(message, value);
     });
   }
 
   protected async askConfirm(): Promise<boolean> {
-    const msg = await this.channel.send({
+    const msg = await this.message.channel.send({
       content: `입력 완료: ${this.getValueString()}로 확정할까요?`,
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -156,7 +179,7 @@ export abstract class Input<
     }
     if (errmsg) {
       autoDeleteMessage(
-        this.channel.send({
+        this.message.channel.send({
           embeds: [
             new EmbedBuilder()
               .setTitle("입력 오류")
@@ -170,7 +193,7 @@ export abstract class Input<
     return true;
   }
 
-  protected valueValidate(v: PT | null | undefined): v is NonNullable<PT> {
+  protected valueValidate(v: PT): v is NonNullable<PT> {
     if (!this.options.valueValidators) return true;
 
     let errmsg = "";
@@ -179,7 +202,7 @@ export abstract class Input<
       errmsg += `* ${validator.invalidMessage}\n`;
     }
     if (errmsg) {
-      autoDeleteMessage(this.channel.send(errmsg));
+      autoDeleteMessage(this.message.channel.send(errmsg));
       return false;
     }
     return true;
