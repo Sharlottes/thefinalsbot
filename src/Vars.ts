@@ -20,27 +20,26 @@ export default class Vars {
 
   public static async init(client: DiscordX.Client): Promise<void> {
     Vars.client = client;
+
+    const dirname = import.meta.url
+      .replace("file:///", "")
+      .replaceAll("/", "\\");
+
+    const publicDir = path.resolve(dirname, "../public");
     await Promise.all([
-      promisify(fs.readdir)(
-        path.resolve(import.meta.dirname, "../public/images/ranks"),
-      ).then((files) =>
-        Promise.all(
-          files.map((file) =>
-            promisify(fs.readFile)(
-              path.resolve(
-                import.meta.dirname,
-                `../public/images/ranks/${file}`,
-              ),
-              { encoding: "base64" },
-            ).then((base64) => (Vars.images[file] = base64)),
+      promisify(fs.readdir)(path.resolve(publicDir, "./images/ranks")).then(
+        (files) =>
+          Promise.all(
+            files.map((file) =>
+              promisify(fs.readFile)(
+                path.resolve(publicDir, `./images/ranks/${file}`),
+                { encoding: "base64" },
+              ).then((base64) => (Vars.images[file] = base64)),
+            ),
           ),
-        ),
       ),
       promisify(fs.readFile)(
-        path.resolve(
-          import.meta.dirname,
-          "../public/fonts/Pretendard-Regular.otf",
-        ),
+        path.resolve(publicDir, "./fonts/Pretendard-Regular.otf"),
       ).then(
         (data) =>
           (this.font = {
