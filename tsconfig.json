@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "jsx": "preserve",
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Node",
@@ -15,6 +16,7 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "baseUrl": "./",
+    "noImplicitOverride": true,
     "lib": ["Decorators", "ESNext"],
     "paths": {
       "@/*": ["./src/*"]

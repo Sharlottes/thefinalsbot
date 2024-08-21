@@ -3,6 +3,7 @@
     "target": "esnext",
     "parser": {
       "syntax": "typescript",
+      "jsx": true,
       "decorators": true,
       "dynamicImport": true,
       "importMeta": true,
@@ -10,6 +11,10 @@
       "externalHelpers": true
     },
     "transform": {
+      "react": {
+        "runtime": "automatic",
+        "pragma": "React.createElement"
+      },
       "decoratorMetadata": true
     },
     "baseUrl": "./",

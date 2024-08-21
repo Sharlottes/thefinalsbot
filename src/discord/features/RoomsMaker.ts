@@ -10,6 +10,7 @@ import {
 } from "discord.js";
 import { ButtonComponent, Discord } from "discordx";
 import PColors from "@/constants/PColors";
+import ServerSettingManager from "@/core/ServerSettingManager";
 
 const roomEmbedDescriptions: Record<string, string> = {
   고랭크: "고랭크(플레티넘~최대) 토너먼트 파티 구인구직 가능합니다.",
@@ -28,10 +29,10 @@ export default class RoomsMaker {
   public async init(): Promise<void> {
     console.time("initalizing RoomsMaker...");
     await Promise.all(
-      Vars.roomMakingChannels.map((channel) => {
+      Object.entries(Vars.roomMakingAnnounceChannels).map(([name, channel]) => {
         FixedMessageRegister.sendMessage(
           channel,
-          this.buildChannelMessage(channel),
+          this.buildChannelMessage(name),
           "keep",
         );
       }),
@@ -39,8 +40,7 @@ export default class RoomsMaker {
     console.timeEnd("initalizing RoomsMaker...");
   }
 
-  private buildChannelMessage(channel: Discord.TextChannel) {
-    const name = channel.name.replace(/[^가-힣]/g, "");
+  private buildChannelMessage(name: string) {
     return {
       embeds: [
         new EmbedBuilder()

@@ -1,10 +1,10 @@
-export interface LeaderboardData {
-  meta?: LeaderboardMeta;
-  count?: number;
-  data?: LeaderBoardUserData[];
+interface LeaderboardData {
+  meta: LeaderboardMeta;
+  count: number;
+  data: LeaderBoardUserData[];
 }
 
-export interface LeaderboardMeta {
+interface LeaderboardMeta {
   leaderboardVersion: string;
   leaderboardPlatform: string;
   nameFilter: string;
@@ -12,19 +12,55 @@ export interface LeaderboardMeta {
   returnCountOnly: boolean;
 }
 
-export interface leaderboardConstructor {
-  page: number;
-  leaderboard?: LeaderboardData;
-}
+type LeaderBoardUserData =
+  | LeaderBoardUserDataCB
+  | LeaderBoardUserDataOB
+  | LeaderBoardUserDataS1
+  | LeaderBoardUserDataS2
+  | LeaderBoardUserDataWT
+  | LeaderBoardUserDataTA;
 
-export interface LeaderBoardUserData {
+interface BaseLeaderBoardUserData {
   rank: number;
-  change: number;
-  leagueNumber: number;
-  league: string;
   name: string;
   steamName: string;
   xboxName: string;
   psnName: string;
+}
+
+interface LeaderBoardUserDataCB extends BaseLeaderBoardUserData {
+  change: number;
+  league: string;
+  fame: number;
+  xp: number;
+  level: number;
   cashouts: number;
+}
+interface LeaderBoardUserDataOB extends BaseLeaderBoardUserData {
+  change: number;
+  league: string;
+  fame: number;
+  cashouts: number;
+}
+interface LeaderBoardUserDataS1 extends BaseLeaderBoardUserData {
+  change: number;
+  league: string;
+  fame: number;
+  cashouts: number;
+}
+interface LeaderBoardUserDataS2 extends BaseLeaderBoardUserData {
+  change: number;
+  leagueNumber: number;
+  league: string;
+  cashouts: number;
+}
+interface LeaderBoardUserDataWT extends BaseLeaderBoardUserData {
+  cashouts: number;
+}
+
+interface LeaderBoardUserDataTA extends BaseLeaderBoardUserData {
+  change: number;
+  leagueNumber: number;
+  league: string;
+  rankScore: number;
 }
