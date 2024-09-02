@@ -4,15 +4,9 @@ import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import { PermissionGuard } from "@discordx/utilities";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import MasterGuard from "../guards/MasterGuard";
-import {
-  ApplicationCommandOptionType,
-  ChannelType,
-  Colors,
-  EmbedBuilder,
-} from "discord.js";
+import { ApplicationCommandOptionType, ChannelType } from "discord.js";
 import ErrorMessageManager from "../messageManagers/ErrorMessageManager";
 import Vars from "@/Vars";
-import sendConfirmMessage from "@/utils/sendConfirmMessage";
 import PrimitiveInputMessageManager from "../messageManagers/inputs/PrimitiveInputMessageManager";
 import {
   InputResolvers,
@@ -69,46 +63,7 @@ export class ServerSettingService {
       return;
     }
 
-    await interaction.deferReply();
-
-    const isInSetting = !!Vars.roomMakingAnnounceChannels.find(
-      (c) => c.id == channel.id,
-    );
-    if (!isInSetting) {
-      const confirmed = await sendConfirmMessage(
-        new EmbedBuilder()
-          .setTitle("해당 채널은 설정에 없는 채널입니다.")
-          .setDescription("설정에 추가하시겠습니까?")
-          .setColor(Colors.DarkBlue),
-        interaction,
-        {},
-      );
-
-      if (!confirmed) {
-        autoDeleteMessage(interaction.reply("취소되었습니다."), 1500);
-        return;
-      }
-      if (confirmed) {
-        Vars.roomMakingAnnounceChannels.push(channel);
-        await ServerSettingModel.updateOne(
-          {
-            guildId: interaction.guildId,
-            botId: interaction.client.user!.id,
-          },
-          {
-            $addToSet: {
-              "channels.roomMakingAnnounceChannels": channel.id,
-            },
-          },
-        );
-        autoDeleteMessage(
-          interaction.channel.send("채널이 추가되었습니다."),
-          1500,
-        );
-      } else {
-        autoDeleteMessage(interaction.channel.send("취소되었습니다."), 1500);
-      }
-    }
+    await interaction.reply("설정을 시작합니다.");
 
     const nameAskMsg = await interaction.channel.send("이름을 입력해주세요.");
     const name = await new PrimitiveInputMessageManager.Builder().send(
@@ -135,7 +90,11 @@ export class ServerSettingService {
 
     await RoomMakingDataModel.updateOne(
       { channelId: channel.id },
-      { name: name.value, description: description.value },
+      {
+        channelId: channel.id,
+        name: name.value,
+        description: description.value,
+      },
       { upsert: true },
     );
 

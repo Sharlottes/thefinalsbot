@@ -35,10 +35,6 @@ const channelMap: Record<
     type: "channel",
   },
   invalidInviteGuilds: { name: "초대링크 차단된 서버들", type: "guild" },
-  roomMakingAnnounceChannels: {
-    name: "방 생성 고정임베드 채널",
-    type: "channel",
-  },
 };
 export default class ServerSettingManager {
   static #main: ServerSettingManager;
@@ -109,7 +105,6 @@ export default class ServerSettingManager {
           matchmakedCategoryId: "",
           matchmakingAnnounceChannelId: "",
           matchmakingWaitingChannelId: "",
-          roomMakingAnnounceChannels: [],
           invalidInviteGuilds: [],
         },
       });

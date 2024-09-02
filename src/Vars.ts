@@ -4,7 +4,6 @@ import { SatoriOptions } from "satori/wasm";
 import fs from "fs";
 import path from "path";
 import { promisify } from "util";
-import FixedMessageModel from "./models/FixedMessagesModel";
 import RoomMakingDataModel from "./models/RoomMakingDataModel";
 
 export default class Vars {
@@ -22,7 +21,6 @@ export default class Vars {
       description: string;
     }
   > = {};
-  static roomMakingAnnounceChannels: Discord.TextChannel[] = [];
   static dmLogChannel: Discord.TextChannel;
   static matchMakingAnnounceChannel: Discord.TextChannel;
   static matchMakingWaitingChannel: Discord.VoiceBasedChannel;
@@ -93,12 +91,6 @@ export default class Vars {
     const serverSettings = ServerSettingManager.main.getSetting();
     if (!serverSettings) throw new Error("ServerSettings not found");
     await Promise.all([
-      ...serverSettings.channels.roomMakingAnnounceChannels.map(async (id) =>
-        client.channels
-          .fetch(id)
-          .then((c) => Vars.validateChannel(c, ChannelType.GuildText))
-          .then((c) => Vars.roomMakingAnnounceChannels.push(c)),
-      ),
       client.channels
         .fetch(serverSettings.channels.dmLogChannelId)
         .then((c) => Vars.validateChannel(c, ChannelType.GuildText))
