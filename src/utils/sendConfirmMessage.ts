@@ -67,6 +67,7 @@ export default async function sendConfirmMessage(
     })
     .catch(() => null);
 
+  await message.delete();
   if (res === null) {
     await interaction.editReply({
       content: timeoutMessage,
