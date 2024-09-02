@@ -68,6 +68,7 @@ export default class AdminService {
       role ? Array.from(role.members.values()).filter((t) => !t.user.bot) : []
     ) as Array<Discord.GuildMember | Discord.User>;
     if (target) targets.push(target);
+    const targetNames = targets.map((t) => t.displayName).join(", ");
 
     await interaction.deferReply();
     const guideMessage = await interaction.editReply({
@@ -78,7 +79,7 @@ export default class AdminService {
           .setDescription(
             `
 DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
-메시지의 내용 및 파일들을 모두 해당 유저에게 전달합니다.`,
+메시지의 내용을 모두 ${bold(targetNames)}에게 전달합니다.`,
           ),
       ],
     });
@@ -103,9 +104,7 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
           .setColor(PColors.primary)
           .setTitle("메시지 확인")
           .setDescription(
-            `정말로 아래 메시지를 ${targets
-              .map((t) => t.displayName)
-              .join(", ")}님에게 전송하시겠습니까?`,
+            `정말로 아래 메시지를 ${bold(targetNames)}님에게 전송하시겠습니까?`,
           ),
       ],
       components: [
@@ -151,11 +150,10 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
       embeds: [
         new EmbedBuilder()
           .setColor(PColors.primary)
-          .setTitle(
-            targets.map((t) => t.displayName).join(", ") +
-              "님에게 DM을 보냈습니다.",
+          .setTitle(bold(targetNames) + "님에게 DM을 보냈습니다.")
+          .setDescription(
+            `내용\n----------------------\n${messageOptions.content}`,
           )
-          .setDescription(`### 내용\n${messageOptions.content}`)
           .setAuthor({
             name: interaction.user.displayName,
             iconURL: interaction.user.displayAvatarURL(),
