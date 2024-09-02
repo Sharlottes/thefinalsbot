@@ -110,8 +110,9 @@ export default class ServerSettingManager {
       });
     const interaction = await channel
       .send({
-        content:
-          "서버 설정이 준비되었습니다.\n세부 설정 버튼을 눌러 서버 설정을 완료하세요.",
+        content: `서버 설정이 없습니다.
+세부 설정 버튼을 눌러 서버 설정을 완료하세요.
+${bold("서버 설정을 완료치 않으면 봇 기능을 이용할 수 없습니다!")}`,
         components: [
           new ActionRowBuilder<ButtonBuilder>().addComponents(
             new ButtonBuilder()
@@ -149,6 +150,7 @@ export default class ServerSettingManager {
     await setting.save();
     msg.push("* 설정이 완료되었습니다!");
     await render();
+    this.settingMap.set(guild.id, setting);
   }
 
   private async resolveSettingInput(
