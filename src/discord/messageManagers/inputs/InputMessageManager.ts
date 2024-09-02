@@ -58,6 +58,8 @@ export abstract class InputMessageManager<
     } & OT,
   ) {
     super(message, messageData);
+    options.textValidators = options.textValidators ?? [];
+    options.textValidators.push(options.inputResolver.getValidate());
     this.value = options.value;
     this.type = options.type;
     this.inputResolver = options.inputResolver;
@@ -66,9 +68,10 @@ export abstract class InputMessageManager<
     this.mCollector = this.message.channel.createMessageCollector();
   }
 
-  public override async postsetManger() {
+  public override async update() {
+    await super.update();
     await this.setupCollectors();
-    return super.postsetManger();
+    return this.message;
   }
 
   public override async remove() {
@@ -83,35 +86,38 @@ export abstract class InputMessageManager<
     value: PT,
   ): Promise<void>;
 
-  protected async setupCollectors() {
-    this.rCollector.on("collect", async (reaction) => {
-      if (reaction.emoji.name !== "👍" || reaction.count == 1) return;
-      if (!this.value) {
-        autoDeleteMessage(
-          this.message.channel.send("에러: 입력된 값이 없습니다."),
-          1500,
-        );
-        return;
-      }
-      const isConfirmed = await this.askConfirm();
-      if (!isConfirmed) return;
-      this.rCollector.stop();
-      this.mCollector.stop();
-      this.options.onConfirm?.(this.value);
-      this.remove();
-    });
-    this.mCollector.on("collect", async (message) => {
-      if (message.author.id == Vars.client.user!.id) return;
-      this.responsedMessages.push(message);
-      const isTextValid = this.textValidate(message.content);
-      if (!isTextValid) return;
-      const value = await this.inputResolver.resolveInput(message);
-      if (!value) return;
+  protected setupCollectors() {
+    return new Promise<void>((res) => {
+      this.rCollector.on("collect", async (reaction) => {
+        if (reaction.emoji.name !== "👍" || reaction.count == 1) return;
+        if (!this.value) {
+          autoDeleteMessage(
+            this.message.channel.send("에러: 입력된 값이 없습니다."),
+            1500,
+          );
+          return;
+        }
+        const isConfirmed = await this.askConfirm();
+        if (!isConfirmed) return;
+        this.rCollector.stop();
+        this.mCollector.stop();
+        this.options.onConfirm?.(this.value);
+        this.remove();
+        res();
+      });
+      this.mCollector.on("collect", async (message) => {
+        if (message.author.id == Vars.client.user!.id) return;
+        this.responsedMessages.push(message);
+        const isTextValid = this.textValidate(message.content);
+        if (!isTextValid) return;
+        const value = await this.inputResolver.resolveInput(message);
+        if (!value) return;
 
-      const isValueValid = this.valueValidate(value);
-      if (!isValueValid) return;
-      message.react("✅");
-      this.handleValue(message, value);
+        const isValueValid = this.valueValidate(value);
+        if (!isValueValid) return;
+        message.react("✅");
+        this.handleValue(message, value);
+      });
     });
   }
 

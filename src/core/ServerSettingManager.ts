@@ -176,7 +176,6 @@ export default class ServerSettingManager {
           value: value as string,
         },
       );
-      await input.update();
       return [
         input.value && this.serializeValue(input.value),
         input.getValueString(),
@@ -190,7 +189,6 @@ export default class ServerSettingManager {
           value: value as string[],
         },
       );
-      await input.update();
 
       return [
         input.value.map((v) => this.serializeValue(v)),
@@ -205,7 +203,6 @@ export default class ServerSettingManager {
           value: value as Record<string, string>,
         },
       );
-      await input.update();
 
       return [
         Object.fromEntries(

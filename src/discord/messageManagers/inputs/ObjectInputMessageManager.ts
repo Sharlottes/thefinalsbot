@@ -34,38 +34,41 @@ export default class ObjectInputMessageManager<
   }
 
   protected override async setupCollectors() {
-    this.rCollector.on("collect", async (reaction) => {
-      if (reaction.emoji.name !== "👍" || reaction.count == 1) return;
-      if (!this.value) {
-        autoDeleteMessage(
-          this.message.channel.send("에러: 입력된 값이 없습니다."),
-          1500,
-        );
-        return;
-      }
-      const isConfirmed = await this.askConfirm();
-      if (!isConfirmed) return;
-      this.rCollector.stop();
-      this.mCollector.stop();
-      this.options.onConfirm?.(this.value);
-      this.remove();
-    });
-    this.mCollector.on("collect", async (message) => {
-      if (message.author.id == Vars.client.user!.id) return;
-      this.responsedMessages.push(message);
-      const isTextValid = this.textValidate(message.content);
-      if (!isTextValid) return;
-      const [key, v] = message.content.split(":");
-      message.content = v; // 이거 진짜 맞나
-      const value = await this.inputResolver.resolveInput(message);
-      if (!value) return;
+    return new Promise<void>((res) => {
+      this.rCollector.on("collect", async (reaction) => {
+        if (reaction.emoji.name !== "👍" || reaction.count == 1) return;
+        if (!this.value) {
+          autoDeleteMessage(
+            this.message.channel.send("에러: 입력된 값이 없습니다."),
+            1500,
+          );
+          return;
+        }
+        const isConfirmed = await this.askConfirm();
+        if (!isConfirmed) return;
+        this.rCollector.stop();
+        this.mCollector.stop();
+        this.options.onConfirm?.(this.value);
+        this.remove();
+        res();
+      });
+      this.mCollector.on("collect", async (message) => {
+        if (message.author.id == Vars.client.user!.id) return;
+        this.responsedMessages.push(message);
+        const isTextValid = this.textValidate(message.content);
+        if (!isTextValid) return;
+        const [key, v] = message.content.split(":");
+        message.content = v; // 이거 진짜 맞나
+        const value = await this.inputResolver.resolveInput(message);
+        if (!value) return;
 
-      const isValueValid = this.valueValidate(value);
-      if (!isValueValid) return;
-      message.react("✅");
-      this.responsedMessages.push(message);
-      this.value![key] = value;
-      this.update();
+        const isValueValid = this.valueValidate(value);
+        if (!isValueValid) return;
+        message.react("✅");
+        this.responsedMessages.push(message);
+        this.value![key] = value;
+        this.update();
+      });
     });
   }
 
@@ -76,7 +79,6 @@ export default class ObjectInputMessageManager<
 * "키":"${this.inputResolver.getTypeString()}" 서식에 따라 순서대로 메시지를 보내주세요.
 * 입력을 마치려면 👍이모지를 눌러주세요.
 * 현재 입력된 값: ${this.getValueString()}`;
-    super.update();
-    return this.message;
+    return super.update();
   }
 }

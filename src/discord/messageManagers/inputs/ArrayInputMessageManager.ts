@@ -48,7 +48,6 @@ export default class ArrayInputMessageManager<
 * ${this.inputResolver.getDescription()}
 * 입력을 마치려면 👍이모지를 눌러주세요.
 * 현재 입력된 값: ${this.getValueString()}`;
-    super.update();
-    return this.message;
+    return super.update();
   }
 }

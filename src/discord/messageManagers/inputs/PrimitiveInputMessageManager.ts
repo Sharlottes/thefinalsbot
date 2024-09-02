@@ -33,30 +33,32 @@ export default class PrimitiveInputMessageManager<
     this.messageData.content = `입력 대기중...
 * 입력을 위한 ${this.inputResolver.getTypeString()} 메시지를 보내주세요.
 * 현재 입력된 값: ${this.getValueString()}`;
-    super.update();
-    return this.message;
+    return super.update();
   }
 
   protected override async setupCollectors() {
-    this.mCollector.on("collect", async (message) => {
-      if (message.author.id == Vars.client.user!.id) return;
-      this.responsedMessages.push(message);
-      const isTextValid = this.textValidate(message.content);
-      if (!isTextValid) return;
-      const value = await this.inputResolver.resolveInput(message);
-      if (!value) return;
+    return new Promise<void>((res) => {
+      this.mCollector.on("collect", async (message) => {
+        if (message.author.id == Vars.client.user!.id) return;
+        this.responsedMessages.push(message);
+        const isTextValid = this.textValidate(message.content);
+        if (!isTextValid) return;
+        const value = await this.inputResolver.resolveInput(message);
+        if (!value) return;
 
-      const isValueValid = this.valueValidate(value);
-      if (!isValueValid) return;
-      message.react("✅");
-      this.handleValue(message, value);
+        const isValueValid = this.valueValidate(value);
+        if (!isValueValid) return;
+        message.react("✅");
+        this.handleValue(message, value);
 
-      const isConfirmed = await this.askConfirm();
-      if (!isConfirmed) return;
-      this.rCollector.stop();
-      this.mCollector.stop();
-      this.options.onConfirm?.(value);
-      this.remove();
+        const isConfirmed = await this.askConfirm();
+        if (!isConfirmed) return;
+        this.rCollector.stop();
+        this.mCollector.stop();
+        this.options.onConfirm?.(value);
+        this.remove();
+        res();
+      });
     });
   }
 }

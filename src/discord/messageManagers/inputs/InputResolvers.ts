@@ -1,5 +1,5 @@
 import Vars from "@/Vars";
-import { Routes } from "discord.js";
+import { InputOptions } from "./InputMessageManager";
 
 export abstract class PrimitiveInputResolver<PT extends PrimitiveInputType> {
   constructor() {}
@@ -11,6 +11,9 @@ export abstract class PrimitiveInputResolver<PT extends PrimitiveInputType> {
   abstract resolveInput(
     msg: Discord.Message,
   ): MaybePromise<PT | null | undefined>;
+  getValidate(): NonNullable<InputOptions<PT>["textValidators"]>[number] {
+    return { callback: () => true, invalidMessage: "" };
+  }
 }
 
 export class TextInputResolver extends PrimitiveInputResolver<string> {
@@ -48,6 +51,17 @@ export class ChannelInputResolver extends PrimitiveInputResolver<Discord.Channel
     const channelId = msg.mentions.channels.firstKey() ?? msg.content;
     if (!channelId || !/^\d{17,19}$/.test(channelId)) return null;
     return await Vars.mainGuild.channels.fetch(channelId);
+  }
+
+  override getValidate(): NonNullable<
+    InputOptions<Discord.Channel>["textValidators"]
+  >[number] {
+    return {
+      callback: (value) =>
+        /^<#\d{17,19}>$/.test(value) || /^\d{17,19}$/.test(value),
+      invalidMessage:
+        "입력값은 17자리 또는 19자리 숫자인 채널 ID거나 채녈 멘션이여야 합니다.",
+    };
   }
 }
 
