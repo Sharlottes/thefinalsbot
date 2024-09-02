@@ -204,10 +204,14 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
             ),
         ],
       }),
-      interaction.reply({
-        content: "확인했습니다",
-        ephemeral: true,
-      }),
+      interaction.message.edit({ components: [] }),
+      autoDeleteMessage(
+        interaction.reply({
+          content: "확인했습니다",
+          ephemeral: true,
+        }),
+        1500,
+      ),
     ]);
   }
 }
