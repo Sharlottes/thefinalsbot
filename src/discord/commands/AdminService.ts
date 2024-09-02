@@ -11,6 +11,7 @@ import {
 } from "discord.js";
 import Vars from "@/Vars";
 import PColors from "@/constants/PColors";
+import throwInteraction from "@/utils/throwInteraction";
 
 @Discord()
 export default class AdminService {
@@ -35,7 +36,7 @@ export default class AdminService {
     if (!channel) throw new Error("Channel not found");
 
     await interaction.deferReply();
-    await interaction.editReply({
+    const guideMessage = await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setColor(PColors.primary)
@@ -84,7 +85,7 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
         ),
       ],
     });
-    await channel.send(messageOptions);
+    const confirmSampleMessage = await channel.send(messageOptions);
 
     const buttonInteraction = await confirmAskMessage.awaitMessageComponent({
       filter: (interaction) => interaction.user.id === userMessage.author.id,
@@ -92,12 +93,24 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
       componentType: ComponentType.Button,
     });
     if (buttonInteraction.customId === "dm_cancel_button") {
-      buttonInteraction.reply({
-        content: "취소되었습니다",
-      });
+      await Promise.all([
+        buttonInteraction.reply({
+          content: "취소되었습니다",
+        }),
+        guideMessage.delete(),
+        userMessage.delete(),
+        confirmAskMessage.delete(),
+        confirmSampleMessage.delete(),
+      ]);
       return;
     }
-    await buttonInteraction.deferReply();
+    await Promise.all([
+      throwInteraction(buttonInteraction),
+      guideMessage.delete(),
+      userMessage.delete(),
+      confirmAskMessage.delete(),
+      confirmSampleMessage.delete(),
+    ]);
 
     const dmChannel = target.dmChannel ?? (await target.createDM());
     const dmMessage = await dmChannel.send({
@@ -117,16 +130,17 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
       ],
       files: messageOptions.files,
     });
-    await buttonInteraction.editReply({
-      content: "메시지를 전송했습니다",
-    });
 
     const logMessage = await Vars.dmLogChannel.send({
       embeds: [
         new EmbedBuilder()
           .setColor(PColors.primary)
           .setTitle(target.displayName + "님에게 DM을 보냈습니다.")
-          .setDescription(`### 내용\n${messageOptions.content}`),
+          .setDescription(`### 내용\n${messageOptions.content}`)
+          .setAuthor({
+            name: interaction.user.displayName,
+            iconURL: interaction.user.displayAvatarURL(),
+          }),
       ],
       files: messageOptions.files,
     });
