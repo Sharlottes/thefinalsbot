@@ -67,9 +67,17 @@ export default class ServerSettingManager {
   }
 
   async requestSettingInit(guild: Discord.Guild) {
+    const allChannels = await guild.channels.fetch();
+    await Promise.all(
+      allChannels.map(async (channel) => {
+        if (channel?.name !== "server-init") return;
+        await channel.delete();
+      }),
+    );
+
     const channel = await guild.channels.create({
       type: ChannelType.GuildText,
-      name: "server init",
+      name: "server-init",
       permissionOverwrites: [
         ...Vars.masterUsers.map(
           (user) =>
@@ -101,7 +109,7 @@ export default class ServerSettingManager {
           matchmakedCategoryId: "",
           matchmakingAnnounceChannelId: "",
           matchmakingWaitingChannelId: "",
-          roomMakingAnnounceChannels: {},
+          roomMakingAnnounceChannels: [],
           invalidInviteGuilds: [],
         },
       });
