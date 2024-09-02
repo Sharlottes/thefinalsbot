@@ -22,16 +22,26 @@ export default class RoomsMaker {
   public async init(): Promise<void> {
     console.time("initalizing RoomsMaker...");
     await Promise.all(
+      Object.entries(Vars.roomMakingAnnounceData).map(
+        ([channelId, { channel, name, description }]) =>
+          FixedMessageRegister.sendMessage(
+            channel,
+            this.buildChannelMessage(name, description),
+            "keep",
+          ),
+      ),
     );
     console.timeEnd("initalizing RoomsMaker...");
   }
 
+  private buildChannelMessage(name: string, description: string) {
     return {
       embeds: [
         new EmbedBuilder()
           .setColor(PColors.primary)
           .setTitle(name + " 음성방 생성")
           .setDescription(
+            `${description}
 음성방을 생성하려면 아래 버튼을 눌러주세요.`,
           )
           .setFooter({ text: "THE FINALS TEAMS" }),
