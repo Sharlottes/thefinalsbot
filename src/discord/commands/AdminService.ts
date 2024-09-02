@@ -129,9 +129,11 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
     });
     if (buttonInteraction.customId === "dm_cancel_button") {
       await Promise.all([
-        buttonInteraction.reply({
-          content: "취소되었습니다",
-        }),
+        autoDeleteMessage(
+          buttonInteraction.reply({
+            content: "취소되었습니다",
+          }),
+        ),
         guideMessage.delete(),
         userMessage.delete(),
         confirmAskMessage.delete(),
