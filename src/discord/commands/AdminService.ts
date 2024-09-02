@@ -11,6 +11,8 @@ import {
 import Vars from "@/Vars";
 import PColors from "@/constants/PColors";
 import throwInteraction from "@/utils/throwInteraction";
+import autoDeleteMessage from "@/utils/autoDeleteMessage";
+import ErrorMessageManager from "../messageManagers/ErrorMessageManager";
 
 @Discord()
 export default class AdminService {
@@ -21,16 +23,51 @@ export default class AdminService {
   })
   async sendDM(
     @SlashOption({
+      name: "역할",
+      description: "DM을 받을 역할",
+      required: false,
+      type: ApplicationCommandOptionType.Role,
+    })
+    role: Discord.Role | null,
+    @SlashOption({
       name: "대상",
-      description: "DM을 보낼 대상",
-      required: true,
+      description: "DM을 받을 대상",
+      required: false,
       type: ApplicationCommandOptionType.User,
     })
-    target: Discord.User,
+    target: Discord.User | null,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
     const channel = interaction.channel;
     if (!channel) throw new Error("Channel not found");
+    if (!role && !target) {
+      await autoDeleteMessage(
+        new ErrorMessageManager.Builder()
+          .send("interaction", interaction, {
+            description: "역할 또는 대상을 입력해주세요.",
+          })
+          .then((m) => m.message),
+      );
+      return;
+    }
+    if (target && target.bot) {
+      await autoDeleteMessage(
+        new ErrorMessageManager.Builder()
+          .send("interaction", interaction, {
+            description: "봇은 DM을 받을 수 없습니다...",
+          })
+          .then((m) => m.message),
+      );
+      return;
+    }
+
+    if (role) {
+      await interaction.guild?.members.fetch();
+    }
+    const targets = (
+      role ? Array.from(role.members.values()).filter((t) => !t.user.bot) : []
+    ) as Array<Discord.GuildMember | Discord.User>;
+    if (target) targets.push(target);
 
     await interaction.deferReply();
     const guideMessage = await interaction.editReply({
@@ -66,7 +103,9 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
           .setColor(PColors.primary)
           .setTitle("메시지 확인")
           .setDescription(
-            `정말로 아래 메시지를 ${target.displayName}님에게 전송하시겠습니까?`,
+            `정말로 아래 메시지를 ${targets
+              .map((t) => t.displayName)
+              .join(", ")}님에게 전송하시겠습니까?`,
           ),
       ],
       components: [
@@ -108,13 +147,14 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
       confirmAskMessage.delete(),
       confirmSampleMessage.delete(),
     ]);
-
-    const dmChannel = target.dmChannel ?? (await target.createDM());
     const logMessage = await Vars.dmLogChannel.send({
       embeds: [
         new EmbedBuilder()
           .setColor(PColors.primary)
-          .setTitle(target.displayName + "님에게 DM을 보냈습니다.")
+          .setTitle(
+            targets.map((t) => t.displayName).join(", ") +
+              "님에게 DM을 보냈습니다.",
+          )
           .setDescription(`### 내용\n${messageOptions.content}`)
           .setAuthor({
             name: interaction.user.displayName,
@@ -123,24 +163,28 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
       ],
       files: messageOptions.files,
     });
-    dmChannel.send({
-      embeds: [
-        new EmbedBuilder()
-          .setColor(PColors.primary)
-          .setTitle("서버메신저")
-          .setDescription(messageOptions.content)
-          .setFooter({ text: `id: ${logMessage.id}` }),
-      ],
-      components: [
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setCustomId("dm_check_button")
-            .setLabel("확인")
-            .setStyle(ButtonStyle.Success),
-        ),
-      ],
-      files: messageOptions.files,
-    });
+    Promise.all(
+      targets.map(async (target) =>
+        (target.dmChannel ?? (await target.createDM())).send({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(PColors.primary)
+              .setTitle("서버메신저")
+              .setDescription(messageOptions.content)
+              .setFooter({ text: `id: ${logMessage.id}` }),
+          ],
+          components: [
+            new ActionRowBuilder<ButtonBuilder>().addComponents(
+              new ButtonBuilder()
+                .setCustomId("dm_check_button")
+                .setLabel("확인")
+                .setStyle(ButtonStyle.Success),
+            ),
+          ],
+          files: messageOptions.files,
+        }),
+      ),
+    );
   }
 
   @ButtonComponent({ id: "dm_check_button" })
