@@ -9,7 +9,7 @@ export default class Vars {
   static client: DiscordX.Client;
   static mainGuild: Discord.Guild;
   static masterUsers: Discord.User[] = [];
-  static roomMakingAnnounceChannels: Record<string, Discord.TextChannel> = {};
+  static roomMakingAnnounceChannels: Discord.TextChannel[] = [];
   static dmLogChannel: Discord.TextChannel;
   static matchMakingAnnounceChannel: Discord.TextChannel;
   static matchMakingWaitingChannel: Discord.VoiceBasedChannel;
@@ -62,13 +62,11 @@ export default class Vars {
     const serverSettings = ServerSettingManager.main.getSetting();
     if (!serverSettings) throw new Error("ServerSettings not found");
     await Promise.all([
-      ...Array.from(
-        serverSettings.channels.roomMakingAnnounceChannels.entries(),
-      ).map(async ([name, id]) =>
+      ...serverSettings.channels.roomMakingAnnounceChannels.map(async (id) =>
         client.channels
           .fetch(id)
           .then((c) => Vars.validateChannel(c, ChannelType.GuildText))
-          .then((c) => (Vars.roomMakingAnnounceChannels[name] = c)),
+          .then((c) => Vars.roomMakingAnnounceChannels.push(c)),
       ),
       client.channels
         .fetch(serverSettings.channels.dmLogChannelId)

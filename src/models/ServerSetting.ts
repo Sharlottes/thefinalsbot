@@ -10,7 +10,7 @@ declare global {
       matchmakedCategoryId: Snowflake; // 매치메이킹된 방들이 들어갈 카테고리
       matchmakingAnnounceChannelId: Snowflake; // 매치메이킹 고정임베드 채널
       matchmakingWaitingChannelId: Snowflake; // 매치메이킹 대기방 채널
-      roomMakingAnnounceChannels: Map<string, Snowflake>; // 방 생성 고정임베드 채널
+      roomMakingAnnounceChannels: Snowflake[]; // 방 생성 고정임베드 채널
       invalidInviteGuilds: Snowflake[]; // 초대링크 차단된 서버들
     };
   }
@@ -21,10 +21,7 @@ export const ChannelsSchema = new Schema<ServerSettingData["channels"]>({
   matchmakedCategoryId: String,
   matchmakingAnnounceChannelId: String,
   matchmakingWaitingChannelId: String,
-  roomMakingAnnounceChannels: {
-    type: Map,
-    of: String,
-  },
+  roomMakingAnnounceChannels: [String],
   invalidInviteGuilds: [String],
 });
 
