@@ -26,6 +26,7 @@ export default class ArrayInputMessageManager<
       value: options.value || [],
       ...options,
     });
+    this.value ??= [];
     this.options.valueValidators = options.valueValidators ?? [];
     this.options.valueValidators.push({
       callback: () =>

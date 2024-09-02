@@ -24,6 +24,7 @@ export default class ObjectInputMessageManager<
       value: options.value || {},
       ...options,
     });
+    this.value ??= {};
     this.options.textValidators = options.textValidators ?? [];
     this.options.textValidators.push({
       callback: (value) => value.includes(":"),
