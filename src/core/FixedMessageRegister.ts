@@ -23,40 +23,41 @@ export default class FixedMessageRegister {
 
   public async init() {
     console.time("initalizing FixedMessageRegister...");
-    const messages = await FixedMessageModel.find();
+    const allData = await FixedMessageModel.find();
     await Promise.all(
-      messages.map((fixedMessageData) =>
-        Promise.all([
-          Vars.mainGuild.channels
-            .fetch(fixedMessageData.channelId)
-            .then((channel) =>
-              (channel as Discord.TextBasedChannel).messages.fetch(
-                fixedMessageData.messageId,
-              ),
-            )
-            .then((message) => message.delete()),
-          FixedMessageModel.deleteOne({
-            messageId: fixedMessageData.messageId,
+      allData.map(async (data) => {
+        const guild = await Vars.client.guilds.fetch(data.guildId);
+        await Promise.all(
+          data.channels.map(async (channelId) => {
+            const channel = await guild.channels.fetch(channelId);
+            if (!channel || !channel.isTextBased()) return;
+            const messages = await channel.messages.fetch();
+            await Promise.all(
+              messages.map((m) => {
+                if (m.author == Vars.client.user) m.delete();
+              }),
+            );
           }),
-        ]),
-      ),
-    ),
-      console.timeEnd("initalizing FixedMessageRegister...");
+        );
+      }),
+    );
+    console.timeEnd("initalizing FixedMessageRegister...");
   }
 
   public static async sendMessage(
-    channel: Discord.TextBasedChannel,
+    channel: Discord.GuildTextBasedChannel,
     messageOptions:
       | string
       | Discord.MessagePayload
       | Discord.BaseMessageOptions,
     type: FixedMessageData["type"] = "remove",
   ) {
+    await FixedMessageModel.updateOne(
+      { guildId: channel.guild.id },
+      { $addToSet: { channels: channel.id } },
+      { upsert: true },
+    );
     const message = await channel.send(messageOptions);
-    await FixedMessageModel.create({
-      messageId: message.id,
-      channelId: channel.id,
-    });
     this.messageData.push({
       channel,
       messageOptions,
