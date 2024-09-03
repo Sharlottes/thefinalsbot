@@ -9,12 +9,12 @@ interface FixedMessageData {
     | Discord.MessagePayload
     | Discord.MessageCreateOptions;
   currentMessage: Discord.Message;
-  type: "remove" | "keep";
 }
 
 @Discord()
 export default class FixedMessageRegister {
-  private static messageData: FixedMessageData[] = [];
+  private static messageData: Record<string, Map<string, FixedMessageData>> =
+    {};
 
   public static main: FixedMessageRegister;
   constructor() {
@@ -50,35 +50,38 @@ export default class FixedMessageRegister {
       | string
       | Discord.MessagePayload
       | Discord.BaseMessageOptions,
-    type: FixedMessageData["type"] = "remove",
   ) {
     await FixedMessageModel.updateOne(
       { guildId: channel.guild.id },
       { $addToSet: { channels: channel.id } },
       { upsert: true },
     );
+    this.messageData[channel.id] ??= new Map();
     const message = await channel.send(messageOptions);
-    this.messageData.push({
+    this.messageData[channel.id].set(message.id, {
       channel,
       messageOptions,
       currentMessage: message,
-      type,
     });
     return message;
   }
 
   @On({ event: "messageCreate" })
   async onMessageCreate([message]: DiscordX.ArgsOf<"messageCreate">) {
-    for (const data of FixedMessageRegister.messageData) {
-      if (data.channel.id !== message.channel.id || message.author.bot)
-        continue;
-
-      if (data.type === "remove") {
-        await message.delete();
-      } else {
-        await data.currentMessage.delete();
-        data.currentMessage = await data.channel.send(data.messageOptions);
-      }
+    const map = FixedMessageRegister.messageData[message.channelId];
+    if (!map || map.has(message.id)) return;
+    const data = map.values();
+    const promises: Promise<unknown>[] = [];
+    for (const d of data) {
+      promises.push(
+        new Promise<void>(async (res) => {
+          await d.currentMessage.delete();
+          d.currentMessage = await message.channel.send(d.messageOptions);
+          res();
+        }),
+      );
     }
+
+    await Promise.all(promises);
   }
 }

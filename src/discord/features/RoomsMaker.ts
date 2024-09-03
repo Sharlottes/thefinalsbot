@@ -27,7 +27,6 @@ export default class RoomsMaker {
           FixedMessageRegister.sendMessage(
             channel,
             this.buildChannelMessage(name, description),
-            "keep",
           ),
       ),
     );
