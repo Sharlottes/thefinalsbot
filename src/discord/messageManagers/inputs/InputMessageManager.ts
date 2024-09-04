@@ -68,10 +68,11 @@ export abstract class InputMessageManager<
     this.mCollector = this.message.channel.createMessageCollector();
   }
 
-  public override async update() {
-    await super.update();
+  public override async postsetManger() {
+    await super.postsetManger();
+    await this.update();
     await this.setupCollectors();
-    return this.message;
+    return this;
   }
 
   public override async remove() {

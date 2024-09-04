@@ -74,7 +74,6 @@ export default <T extends MessageManager, OT = any>(
         manager.messageData.content = null;
       }
 
-      await manager.update();
       return manager;
     }
 
