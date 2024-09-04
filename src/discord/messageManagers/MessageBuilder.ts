@@ -51,13 +51,11 @@ export default <T extends MessageManager, OT = any>(
         if (type === "interaction") {
           const interaction = sender as Discord.RepliableInteraction;
           if (interaction.deferred) {
-            return interaction
-              .editReply(sendOptions)
-              .then((res) => res.fetch());
+            return interaction.editReply(sendOptions);
           } else if (interaction.replied) {
-            return interaction.followUp(sendOptions).then((res) => res.fetch());
+            return interaction.followUp({ ...sendOptions, fetchReply: true });
           } else {
-            return interaction.reply(sendOptions).then((res) => res.fetch());
+            return interaction.reply({ ...sendOptions, fetchReply: true });
           }
         } else {
           return (sender as Discord.PartialTextBasedChannelFields).send(
