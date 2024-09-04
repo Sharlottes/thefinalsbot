@@ -1,15 +1,15 @@
-import { ActionRow, ActionRowBuilder } from "discord.js";
+import { ActionRowBuilder } from "discord.js";
 import MessageManager, { MessageData } from "./MessageManager";
 
-export default <T extends MessageManager, OT = any>(
+export default function <T extends MessageManager, OT>(
   Manager: (new (
     message: Discord.Message,
     messageData: MessageData,
     options: OT,
   ) => T) &
     Pick<typeof MessageManager, "presetMessageData">,
-) =>
-  class MessageBuilder {
+) {
+  return class MessageBuilder {
     private messageData: MessageData = Object.create(
       MessageBuilder.getEmptyMessageData(),
     );
@@ -17,12 +17,12 @@ export default <T extends MessageManager, OT = any>(
     public send(
       type: "channel",
       sender: Discord.PartialTextBasedChannelFields,
-      options: OT,
+      options: OT & Discord.MessageCreateOptions,
     ): Promise<T>;
     public send(
       type: "interaction",
       sender: Discord.RepliableInteraction,
-      options: OT,
+      options: OT & Discord.InteractionReplyOptions,
     ): Promise<T>;
     public async send(
       type: "channel" | "interaction",
@@ -42,6 +42,7 @@ export default <T extends MessageManager, OT = any>(
         allowedMentions: this.messageData.allowedMentions,
         files: this.messageData.files,
         components: this.messageData.components,
+        ...options,
       };
       const isEmpty = MessageBuilder.isEmpty(this.messageData);
       if (isEmpty) {
@@ -246,3 +247,4 @@ export default <T extends MessageManager, OT = any>(
       return this;
     }
   };
+}
