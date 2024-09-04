@@ -165,8 +165,7 @@ ${bold("서버 설정을 완료치 않으면 봇 기능을 이용할 수 없습�
 
     if (!valueType) return [undefined, ""];
     if (valueType === String) {
-      const input = await new PrimitiveInputMessageManager.Builder().send(
-        "channel",
+      const input = await PrimitiveInputMessageManager.createOnChannel(
         channel,
         {
           inputResolver: resolver,
@@ -178,28 +177,20 @@ ${bold("서버 설정을 완료치 않으면 봇 기능을 이용할 수 없습�
         input.getValueString(),
       ];
     } else if (Array.isArray(valueType)) {
-      const input = await new ArrayInputMessageManager.Builder().send(
-        "channel",
-        channel,
-        {
-          inputResolver: resolver,
-          value: value as string[],
-        },
-      );
+      const input = await ArrayInputMessageManager.createOnChannel(channel, {
+        inputResolver: resolver,
+        value: value as string[],
+      });
 
       return [
         input.value.map((v) => this.serializeValue(v)),
         input.getValueString(),
       ];
     } else {
-      const input = await new ObjectInputMessageManager.Builder().send(
-        "channel",
-        channel,
-        {
-          inputResolver: resolver,
-          value: value as Record<string, string>,
-        },
-      );
+      const input = await ObjectInputMessageManager.createOnChannel(channel, {
+        inputResolver: resolver,
+        value: value as Record<string, string>,
+      });
 
       return [
         Object.fromEntries(

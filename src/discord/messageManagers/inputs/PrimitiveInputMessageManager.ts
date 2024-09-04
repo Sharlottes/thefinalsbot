@@ -1,39 +1,58 @@
-import { InputMessageManager, InputOptions } from "./InputMessageManager";
-import { PrimitiveInputType, PrimitiveInputResolver } from "./InputResolvers";
+import InputMessageManager, { InputOptions } from "./InputMessageManager";
+import { PrimitiveInputResolver, PrimitiveInputType } from "./InputResolvers";
 import Vars from "@/Vars";
-import MessageBuilder from "@/discord/messageManagers/MessageBuilder";
 import { MessageData } from "@/discord/messageManagers/MessageManager";
 
 export default class PrimitiveInputMessageManager<
   PT extends PrimitiveInputType,
-> extends InputMessageManager<PT, PT | undefined> {
-  public static override Builder = MessageBuilder(PrimitiveInputMessageManager);
-
-  constructor(
+> extends InputMessageManager<"primitive">()<PT> {
+  protected static override async createManager<PT extends PrimitiveInputType>(
     message: Discord.Message,
     messageData: MessageData,
-    options: {
-      inputResolver: PrimitiveInputResolver<PT>;
-      value?: PT;
-    } & InputOptions<PT>,
+    options: InputOptions<PT, "primitive">,
   ) {
-    super(message, messageData, {
-      type: "primitive",
-      value: options.value,
-      ...options,
-    });
+    const manager = new this<PT>(message, messageData, options);
+
+    options.textValidators = options.textValidators ?? [];
+    options.textValidators.push(options.inputResolver.getValidate());
+    manager.value = options.value!;
+    manager.inputResolver = options.inputResolver;
+    manager.rCollector = manager.message.createReactionCollector();
+    manager.mCollector = manager.message.channel.createMessageCollector();
+
+    await manager.update();
+    await manager.setupCollectors();
+    return manager;
+  }
+
+  protected static override async createMessageData<
+    PT extends PrimitiveInputType,
+  >(managerOptions: InputOptions<PT, "primitive">): Promise<any> {
+    const messageData = await super.createMessageData(managerOptions);
+    messageData.content = `입력 대기중...
+* 입력을 위한 ${managerOptions.inputResolver.getTypeString()} 메시지를 보내주세요.
+* 현재 입력된 값: ${this.getValueString<PT>(managerOptions.value, managerOptions.inputResolver)}`;
+    return messageData;
+  }
+
+  protected static override getValueString<PT extends PrimitiveInputType>(
+    value: PT | undefined,
+    inputResolver: PrimitiveInputResolver<PT>,
+  ): string {
+    if (value === undefined) return "없음";
+    return inputResolver.getValueString(value);
+  }
+
+  public override getValueString(): string {
+    return PrimitiveInputMessageManager.getValueString(
+      this.value,
+      this.inputResolver,
+    );
   }
 
   protected override async handleValue(message: Discord.Message, value: PT) {
     this.value = value;
     await this.update();
-  }
-
-  public override async update() {
-    this.messageData.content = `입력 대기중...
-* 입력을 위한 ${this.inputResolver.getTypeString()} 메시지를 보내주세요.
-* 현재 입력된 값: ${this.getValueString()}`;
-    return super.update();
   }
 
   protected override async setupCollectors() {

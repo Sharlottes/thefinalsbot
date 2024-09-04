@@ -1,25 +1,17 @@
 import Discord from "discord.js";
-import MessageManager, { MessageData } from "./MessageManager";
+import MessageManager from "./MessageManager";
 import PColors from "@/constants/PColors";
-import MessageBuilder from "./MessageBuilder";
 
 export interface ErrorMessageOptions {
   description?: string;
   footer?: [string, string];
 }
-export default class ErrorMessageManager extends MessageManager {
-  public constructor(
-    message: Discord.Message,
-    messageData: MessageData,
-    _options: ErrorMessageOptions,
-  ) {
-    super(message, messageData);
-  }
-
-  public static override presetMessageData(
-    messageData: MessageData,
-    { description, footer }: ErrorMessageOptions,
-  ) {
+export default class ErrorMessageManager extends MessageManager<ErrorMessageOptions>() {
+  protected static override async createMessageData({
+    description,
+    footer,
+  }: ErrorMessageOptions) {
+    const messageData = await super.createMessageData({});
     messageData.embeds = [
       new Discord.EmbedBuilder()
         .setColor(PColors.error)
@@ -36,6 +28,4 @@ export default class ErrorMessageManager extends MessageManager {
     ];
     return messageData;
   }
-
-  public static override Builder = MessageBuilder(ErrorMessageManager);
 }

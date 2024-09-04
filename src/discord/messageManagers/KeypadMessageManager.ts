@@ -1,6 +1,5 @@
 import Discord, {
   ActionRowBuilder,
-  ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
 } from "discord.js";
@@ -9,33 +8,33 @@ import ButtonComponent from "../components/ButtonComponent";
 import ignoreInteraction from "../../utils/ignoreInteraction";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import ErrorMessageManager from "./ErrorMessageManager";
-import MessageBuilder from "./MessageBuilder";
 
 export interface KeypadMessageOptions {
   callback: (amount: number) => void;
   min?: number;
   max?: number;
 }
-export default class KeypadMessageManager extends MessageManager {
+export default class KeypadMessageManager extends MessageManager<KeypadMessageOptions>() {
   public amount = 0;
-  private readonly callback: (amount: number) => void;
-  private readonly mainEmbed: EmbedBuilder;
-  private readonly max?: number;
-  private readonly min?: number;
+  private callback!: (amount: number) => void;
+  private mainEmbed!: EmbedBuilder;
+  private max?: number;
+  private min?: number;
 
-  public constructor(
+  static override async createManager(
     message: Discord.Message,
     messageData: MessageData,
     options: KeypadMessageOptions,
   ) {
-    super(message, messageData);
-    this.min = options.min;
-    this.max = options.max;
-    this.callback = options.callback;
-    this.mainEmbed = new EmbedBuilder().setFields([
-      { name: "Amount", value: this.amount.toString() },
+    const manager = new this(message, messageData, options);
+
+    manager.min = options.min;
+    manager.max = options.max;
+    manager.callback = options.callback;
+    manager.mainEmbed = new EmbedBuilder().setFields([
+      { name: "Amount", value: manager.amount.toString() },
     ]);
-    this.messageData.embeds = [this.mainEmbed];
+    manager.messageData.embeds = [manager.mainEmbed];
     let stack = 0;
     for (let i = 1; i <= 3; i++) {
       const row = new ActionRowBuilder<ButtonComponent>();
@@ -47,36 +46,40 @@ export default class KeypadMessageManager extends MessageManager {
             { label: sstack.toString() },
             async (interaction) => {
               ignoreInteraction(interaction);
-              this.amount = await this.validate(this.amount * 10 + sstack);
-              this.updateEmbed();
+              manager.amount = await manager.validate(
+                manager.amount * 10 + sstack,
+              );
+              manager.updateEmbed();
             },
           ),
         );
       }
-      this.messageData.components.push(row);
+      manager.messageData.components.push(row);
     }
 
-    this.messageData.components.push(
+    manager.messageData.components.push(
       new ActionRowBuilder<ButtonComponent>().addComponents(
         ButtonComponent.create({ label: "0" }, (interaction) => {
           ignoreInteraction(interaction);
-          this.amount *= 10;
-          this.updateEmbed();
+          manager.amount *= 10;
+          manager.updateEmbed();
         }),
         ButtonComponent.create(
           { label: "del", style: ButtonStyle.Danger },
           async (interaction) => {
             ignoreInteraction(interaction);
-            this.amount = await this.validate(Math.floor(this.amount / 10));
-            this.updateEmbed();
+            manager.amount = await manager.validate(
+              Math.floor(manager.amount / 10),
+            );
+            manager.updateEmbed();
           },
         ),
         ButtonComponent.create(
           { label: "done", style: ButtonStyle.Success },
           (interaction) => {
             ignoreInteraction(interaction);
-            this.callback(this.amount);
-            this.remove();
+            manager.callback(manager.amount);
+            manager.remove();
           },
         ),
       ),
@@ -85,51 +88,48 @@ export default class KeypadMessageManager extends MessageManager {
           { label: "cancel", style: ButtonStyle.Secondary },
           (interaction) => {
             ignoreInteraction(interaction);
-            this.remove();
+            manager.remove();
           },
         ),
         ButtonComponent.create(
           { label: "reset", style: ButtonStyle.Secondary },
           (interaction) => {
             ignoreInteraction(interaction);
-            this.amount = Math.min(0, this.min ?? 0);
-            this.updateEmbed();
+            manager.amount = Math.min(0, manager.min ?? 0);
+            manager.updateEmbed();
           },
         ),
-        ...(this.max !== undefined
+        ...(manager.max !== undefined
           ? [
               ButtonComponent.create(
                 { label: "max", style: ButtonStyle.Secondary },
                 (interaction) => {
                   ignoreInteraction(interaction);
-                  this.amount = this.max!;
-                  this.updateEmbed();
+                  manager.amount = manager.max!;
+                  manager.updateEmbed();
                 },
               ),
             ]
           : []),
       ),
     );
+    return manager;
   }
 
   private async validate(number: number) {
     if (this.min !== undefined && number < this.min) {
       await autoDeleteMessage(
-        new ErrorMessageManager.Builder()
-          .send("channel", this.message.channel, {
-            description: `${this.min}보다 작아선 안됩니다. (${number})`,
-          })
-          .then((m) => m.message),
+        ErrorMessageManager.createOnChannel(this.message.channel, {
+          description: `${this.min}보다 작아선 안됩니다. (${number})`,
+        }).then((m) => m.message),
       );
       return this.amount;
     }
     if (this.max !== undefined && number > this.max) {
       await autoDeleteMessage(
-        new ErrorMessageManager.Builder()
-          .send("channel", this.message.channel, {
-            description: `${this.max}보다 커선 안됩니다. (${number})`,
-          })
-          .then((m) => m.message),
+        ErrorMessageManager.createOnChannel(this.message.channel, {
+          description: `${this.max}보다 커선 안됩니다. (${number})`,
+        }).then((m) => m.message),
       );
       return this.amount;
     }
@@ -146,6 +146,4 @@ export default class KeypadMessageManager extends MessageManager {
     ]);
     await this.update();
   }
-
-  public static override Builder = MessageBuilder(KeypadMessageManager);
 }

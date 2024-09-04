@@ -1,37 +1,61 @@
 import { inlineCode } from "discord.js";
-import { InputMessageManager, InputOptions } from "./InputMessageManager";
-import { PrimitiveInputType, PrimitiveInputResolver } from "./InputResolvers";
+import InputMessageManager, { InputOptions } from "./InputMessageManager";
+import { PrimitiveInputResolver, PrimitiveInputType } from "./InputResolvers";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import Vars from "@/Vars";
-import MessageBuilder from "@/discord/messageManagers/MessageBuilder";
 import { MessageData } from "@/discord/messageManagers/MessageManager";
 
 export default class ObjectInputMessageManager<
   PT extends PrimitiveInputType,
-> extends InputMessageManager<PT, Record<string, PT>> {
-  public static override Builder = MessageBuilder(ObjectInputMessageManager);
-
-  constructor(
+> extends InputMessageManager<"object">()<PT> {
+  protected static override async createManager<PT extends PrimitiveInputType>(
     message: Discord.Message,
     messageData: MessageData,
-    options: {
-      inputResolver: PrimitiveInputResolver<PT>;
-      value?: Record<string, PT>;
-    } & InputOptions<PT>,
+    options: InputOptions<PT, "object">,
   ) {
-    super(message, messageData, {
-      type: "object",
-      value: options.value || {},
-      ...options,
-    });
-    this.value ??= {};
-    this.options.textValidators = options.textValidators ?? [];
-    this.options.textValidators.push({
+    const manager = new this<PT>(message, messageData, options);
+
+    options.textValidators = options.textValidators ?? [];
+    options.textValidators.push({
       callback: (value) => value.includes(":"),
       invalidMessage: `서식이 올바르지 않습니다. ${inlineCode(":")} 문자가 무조건 있어야 합니다.`,
     });
+    manager.value = options.value ?? {};
+    manager.inputResolver = options.inputResolver;
+    manager.rCollector = manager.message.createReactionCollector();
+    manager.mCollector = manager.message.channel.createMessageCollector();
+    message.react("👍");
+    await manager.update();
+    await manager.setupCollectors();
+    return manager;
+  }
 
-    this.message.react("👍");
+  protected static override async createMessageData<
+    PT extends PrimitiveInputType,
+  >(managerOptions: InputOptions<PT, "object">): Promise<any> {
+    const messageData = await super.createMessageData(managerOptions);
+    messageData.content = `입력 대기중... 
+      * "키":"${managerOptions.inputResolver.getTypeString()}" 서식에 따라 순서대로 메시지를 보내주세요.
+      * 입력을 마치려면 👍이모지를 눌러주세요.
+      * 현재 입력된 값: ${this.getValueString<PT>(managerOptions.value ?? {}, managerOptions.inputResolver)}`;
+    return messageData;
+  }
+
+  protected static override getValueString<PT extends PrimitiveInputType>(
+    value: Record<string, PT>,
+    inputResolver: PrimitiveInputResolver<PT>,
+  ): string {
+    if (value === undefined) return "없음";
+    return Object.entries(value)
+      .map(([key, value]) => `${key}: ${inputResolver.getValueString(value)}`)
+      .join("\n");
+  }
+
+  public override getValueString(): string {
+    return ObjectInputMessageManager.getValueString(
+      this.value,
+      this.inputResolver,
+    );
   }
 
   protected override async setupCollectors() {
@@ -72,8 +96,6 @@ export default class ObjectInputMessageManager<
       });
     });
   }
-
-  protected override async handleValue(message: Discord.Message, value: PT) {}
 
   public override async update() {
     this.messageData.content = `입력 대기중... 

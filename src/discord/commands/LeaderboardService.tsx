@@ -102,8 +102,7 @@ export default class LeaderboardService {
       return;
     }
 
-    const manager = await new PaginationMessageManager.Builder().send(
-      "interaction",
+    const manager = await PaginationMessageManager.createOnInteraction(
       interaction,
       { size: ~~(result.data.count / 10) },
     );
@@ -160,8 +159,7 @@ export default class LeaderboardService {
       return;
     }
 
-    const manager = await new PaginationMessageManager.Builder().send(
-      "interaction",
+    const manager = await PaginationMessageManager.createOnInteraction(
       interaction,
       { size: result.data.count },
     );

@@ -67,11 +67,9 @@ export default class SlashOptionBuilder<T extends string, TD extends string> {
 
         if (errorMsg) {
           await autoDeleteMessage(
-            new ErrorMessageManager.Builder()
-              .send("interaction", interaction, {
-                description: errorMsg,
-              })
-              .then((m) => m.message),
+            ErrorMessageManager.createOnInteraction(interaction, {
+              description: errorMsg,
+            }).then((m) => m.message),
           );
           return undefined;
         }

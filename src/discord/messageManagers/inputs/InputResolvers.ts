@@ -1,5 +1,5 @@
 import Vars from "@/Vars";
-import { InputOptions } from "./InputMessageManager";
+import { InputOptions, PTTypes } from "./InputMessageManager";
 
 export abstract class PrimitiveInputResolver<PT extends PrimitiveInputType> {
   constructor() {}
@@ -11,7 +11,9 @@ export abstract class PrimitiveInputResolver<PT extends PrimitiveInputType> {
   abstract resolveInput(
     msg: Discord.Message,
   ): MaybePromise<PT | null | undefined>;
-  getValidate(): NonNullable<InputOptions<PT>["textValidators"]>[number] {
+  getValidate(): NonNullable<
+    InputOptions<keyof PrimitiveInputTypeMap, PTTypes>["textValidators"]
+  >[number] {
     return { callback: () => true, invalidMessage: "" };
   }
 }
@@ -54,7 +56,7 @@ export class ChannelInputResolver extends PrimitiveInputResolver<Discord.Channel
   }
 
   override getValidate(): NonNullable<
-    InputOptions<Discord.Channel>["textValidators"]
+    InputOptions<Discord.Channel, PTTypes>["textValidators"]
   >[number] {
     return {
       callback: (value) =>
@@ -108,14 +110,23 @@ export class GuildPreviewInputResolver extends PrimitiveInputResolver<Discord.Gu
   }
 }
 
+export type PrimitiveInputTypes<PT extends PrimitiveInputType> =
+  | PT
+  | Record<string, PT>
+  | PT[];
 export type PrimitiveInputType =
   | string
   | Discord.Channel
   | Discord.CategoryChannel
   | Discord.GuildPreview;
+export type PrimitiveInputTypeMap = {
+  [P in keyof typeof InputResolvers]: Parameters<
+    (typeof InputResolvers)[P]["getValueString"]
+  >[0];
+};
 export const InputResolvers = {
   text: new TextInputResolver(),
   channel: new ChannelInputResolver(),
   category: new CategoryInputResolver(),
   guild: new GuildPreviewInputResolver(),
-};
+} as const;

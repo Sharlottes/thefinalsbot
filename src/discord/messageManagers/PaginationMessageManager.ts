@@ -4,7 +4,6 @@ import {
 } from "@/discord/messageManagers/inputs/InputResolvers";
 import PrimitiveInputMessageManager from "@/discord/messageManagers/inputs/PrimitiveInputMessageManager";
 import ButtonComponent from "@/discord/components/ButtonComponent";
-import MessageBuilder from "@/discord/messageManagers/MessageBuilder";
 import MessageManager, {
   MessageData,
 } from "@/discord/messageManagers/MessageManager";
@@ -23,9 +22,12 @@ const btn_symbols = [
 type PaginationEvents = {
   change: () => void;
 };
-export default class PaginationMessageManager extends MessageManager {
+interface PaginationOptions {
+  size: number;
+}
+export default class PaginationMessageManager extends MessageManager<PaginationOptions>() {
   private currentPage = 0;
-  public readonly size: number;
+  public size!: number;
   public readonly events = new EventEmitter() as TypedEmitter<PaginationEvents>;
 
   public get $currentPage() {
@@ -36,18 +38,16 @@ export default class PaginationMessageManager extends MessageManager {
     this.updateChanges();
   }
 
-  constructor(
+  protected static override async createManager(
     message: Discord.Message,
     messageData: MessageData,
-    options: { size: number },
+    options: PaginationOptions,
   ) {
-    super(message, messageData);
-    this.size = options.size;
-  }
-
-  public override async postsetManger() {
-    await this.updateChanges();
-    return super.postsetManger();
+    const manager = new this(message, messageData, options);
+    manager.events.on("change", () => manager.updateChanges());
+    manager.size = options.size;
+    await manager.updateChanges();
+    return manager;
   }
 
   private async updateChanges() {
@@ -78,20 +78,15 @@ export default class PaginationMessageManager extends MessageManager {
                   +value >= 1 && +value <= this.size,
                 invalidMessage: `1부터 ${this.size} 사이의 숫자만 가능합니다.`,
               };
-
-              new PrimitiveInputMessageManager.Builder().send(
-                "interaction",
-                interaction,
-                {
-                  inputResolver: new TextInputResolver(),
-                  textValidators: [onlyUint],
-                  valueValidators: [onlyInRange],
-                  onConfirm: (amount) => {
-                    this.currentPage = +amount;
-                    this.updateChanges();
-                  },
+              PrimitiveInputMessageManager.createOnInteraction(interaction, {
+                inputResolver: new TextInputResolver(),
+                textValidators: [onlyUint],
+                valueValidators: [onlyInRange],
+                onConfirm: (amount) => {
+                  this.currentPage = +amount;
+                  this.updateChanges();
                 },
-              );
+              });
             },
           ),
         );
@@ -115,6 +110,4 @@ export default class PaginationMessageManager extends MessageManager {
     }
     return action_rows;
   }
-
-  public static override Builder = MessageBuilder(PaginationMessageManager);
 }
