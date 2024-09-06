@@ -21,6 +21,13 @@ export default class RoomMaker {
 
   public async init(): Promise<void> {
     console.time("initalizing RoomsMaker...");
+    // clean up fixed message
+    while (this.data.length > 0) {
+      const data = this.data.pop();
+      if (!data) continue;
+      FixedMessageRegister.cancelMessage(data.channel);
+    }
+
     await Promise.all(
       Object.entries(Vars.roomMakingAnnounceData).map(
         async ([channelId, { channel, name, description }]) => {

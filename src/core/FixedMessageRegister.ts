@@ -44,6 +44,29 @@ export default class FixedMessageRegister {
     console.timeEnd("initalizing FixedMessageRegister...");
   }
 
+  public static async cancelMessage(channel: Discord.GuildTextBasedChannel) {
+    const promises: Promise<unknown>[] = [];
+    promises.push(
+      FixedMessageModel.updateOne(
+        { guildId: channel.guild.id },
+        { $pull: { channels: channel.id } },
+      ).exec(),
+    );
+    promises.push(
+      new Promise(async () => {
+        const map = this.messageData[channel.id];
+        if (!map) return;
+        const promises: Promise<unknown>[] = [];
+        for (const [, data] of map) {
+          promises.push(data.currentMessage.delete());
+        }
+        await Promise.all(promises);
+        delete this.messageData[channel.id];
+      }),
+    );
+    await Promise.all(promises);
+  }
+
   public static async sendMessage(
     channel: Discord.GuildTextBasedChannel,
     messageOptions:
@@ -70,15 +93,19 @@ export default class FixedMessageRegister {
   async onMessageCreate([message]: DiscordX.ArgsOf<"messageCreate">) {
     const map = FixedMessageRegister.messageData[message.channelId];
     if (!map || map.has(message.id)) return;
-    const data = map.values();
-    const promises: Promise<unknown>[] = [];
-    for (const d of data) {
+    const promises: Promise<void>[] = [];
+    for (const [id, d] of map) {
       promises.push(
-        new Promise<void>(async (res) => {
+        (async () => {
           await d.currentMessage.delete();
-          d.currentMessage = await message.channel.send(d.messageOptions);
-          res();
-        }),
+          const m = await message.channel.send(d.messageOptions);
+          map.set(m.id, {
+            channel: m.channel,
+            messageOptions: d.messageOptions,
+            currentMessage: m,
+          });
+          map.delete(id);
+        })(),
       );
     }
 

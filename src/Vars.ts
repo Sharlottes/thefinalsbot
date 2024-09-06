@@ -5,6 +5,9 @@ import fs from "fs";
 import path from "path";
 import { promisify } from "util";
 import RoomMakingDataModel from "./models/RoomMakingDataModel";
+import { ChangeStreamDocument } from "mongodb";
+import RoomMaker from "./discord/features/RoomsMaker";
+import FixedMessageRegister from "./core/FixedMessageRegister";
 
 export default class Vars {
   // in djs, .env
@@ -85,6 +88,35 @@ export default class Vars {
         ),
       ),
     ]);
+
+    RoomMakingDataModel.watch<
+      RoomMakingDataData,
+      ChangeStreamDocument<RoomMakingDataData>
+    >([], {
+      fullDocument: "updateLookup",
+      fullDocumentBeforeChange: "required",
+    }).on("change", async (data) => {
+      if (data.operationType === "delete") {
+        const channel = await Vars.client.channels
+          .fetch(data.fullDocumentBeforeChange!.channelId)
+          .then((c) => Vars.validateChannel(c, ChannelType.GuildText));
+        delete Vars.roomMakingAnnounceData[channel.id];
+        await FixedMessageRegister.cancelMessage(channel);
+      } else if (
+        data.operationType === "update" ||
+        data.operationType === "insert"
+      ) {
+        const channel = await client.channels
+          .fetch(data.fullDocument!.channelId)
+          .then((c) => Vars.validateChannel(c, ChannelType.GuildText));
+        Vars.roomMakingAnnounceData[channel.id] = {
+          channel,
+          name: data.fullDocument!.name,
+          description: data.fullDocument!.description,
+        };
+        await RoomMaker.main.init();
+      }
+    });
   }
 
   public static async initServerSetting(client: DiscordX.Client) {
