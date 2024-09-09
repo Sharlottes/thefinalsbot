@@ -85,7 +85,11 @@ export default class ServerSettingManager {
               allow: "ViewChannel",
             }) as const,
         ),
-
+        {
+          type: OverwriteType.Role,
+          id: guild.roles.everyone,
+          deny: "ViewChannel",
+        },
         {
           type: OverwriteType.Role,
           id: guild.roles.highest,

@@ -4,18 +4,18 @@ import {
   ApplicationCommandOptionType,
   ButtonBuilder,
   ButtonStyle,
-  Colors,
   ComponentType,
   EmbedBuilder,
   bold,
 } from "discord.js";
 import Vars from "@/Vars";
 import PColors from "@/constants/PColors";
+import throwInteraction from "@/utils/throwInteraction";
+import autoDeleteMessage from "@/utils/autoDeleteMessage";
+import ErrorMessageManager from "../messageManagers/ErrorMessageManager";
 
 @Discord()
 export default class AdminService {
-  messageIdMap = new Map<string, string>();
-
   @Slash({
     name: "갠디",
     description: "DM을 보냅니다",
@@ -23,19 +23,55 @@ export default class AdminService {
   })
   async sendDM(
     @SlashOption({
+      name: "역할",
+      description: "DM을 받을 역할",
+      required: false,
+      type: ApplicationCommandOptionType.Role,
+    })
+    role: Discord.Role | null,
+    @SlashOption({
       name: "대상",
-      description: "DM을 보낼 대상",
-      required: true,
+      description: "DM을 받을 대상",
+      required: false,
       type: ApplicationCommandOptionType.User,
     })
-    target: Discord.User,
+    target: Discord.User | null,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
     const channel = interaction.channel;
     if (!channel) throw new Error("Channel not found");
+    if (!role && !target) {
+      await autoDeleteMessage(
+        new ErrorMessageManager.Builder()
+          .send("interaction", interaction, {
+            description: "역할 또는 대상을 입력해주세요.",
+          })
+          .then((m) => m.message),
+      );
+      return;
+    }
+    if (target && target.bot) {
+      await autoDeleteMessage(
+        new ErrorMessageManager.Builder()
+          .send("interaction", interaction, {
+            description: "봇은 DM을 받을 수 없습니다...",
+          })
+          .then((m) => m.message),
+      );
+      return;
+    }
+
+    if (role) {
+      await interaction.guild?.members.fetch();
+    }
+    const targets = (
+      role ? Array.from(role.members.values()).filter((t) => !t.user.bot) : []
+    ) as Array<Discord.GuildMember | Discord.User>;
+    if (target) targets.push(target);
+    const targetNames = targets.map((t) => t.displayName).join(", ");
 
     await interaction.deferReply();
-    await interaction.editReply({
+    const guideMessage = await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setColor(PColors.primary)
@@ -43,7 +79,7 @@ export default class AdminService {
           .setDescription(
             `
 DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
-메시지의 내용 및 파일들을 모두 해당 유저에게 전달합니다.`,
+메시지의 내용을 모두 ${bold(targetNames)}에게 전달합니다.`,
           ),
       ],
     });
@@ -68,7 +104,7 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
           .setColor(PColors.primary)
           .setTitle("메시지 확인")
           .setDescription(
-            `정말로 아래 메시지를 ${target.displayName}님에게 전송하시겠습니까?`,
+            `정말로 아래 메시지를 ${bold(targetNames)}님에게 전송하시겠습니까?`,
           ),
       ],
       components: [
@@ -84,7 +120,7 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
         ),
       ],
     });
-    await channel.send(messageOptions);
+    const confirmSampleMessage = await channel.send(messageOptions);
 
     const buttonInteraction = await confirmAskMessage.awaitMessageComponent({
       filter: (interaction) => interaction.user.id === userMessage.author.id,
@@ -92,45 +128,63 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
       componentType: ComponentType.Button,
     });
     if (buttonInteraction.customId === "dm_cancel_button") {
-      buttonInteraction.reply({
-        content: "취소되었습니다",
-      });
+      await Promise.all([
+        autoDeleteMessage(
+          buttonInteraction.reply({
+            content: "취소되었습니다",
+          }),
+        ),
+        guideMessage.delete(),
+        userMessage.delete(),
+        confirmAskMessage.delete(),
+        confirmSampleMessage.delete(),
+      ]);
       return;
     }
-    await buttonInteraction.deferReply();
-
-    const dmChannel = target.dmChannel ?? (await target.createDM());
-    const dmMessage = await dmChannel.send({
-      embeds: [
-        new EmbedBuilder()
-          .setColor(PColors.primary)
-          .setTitle("서버메신저")
-          .setDescription(messageOptions.content),
-      ],
-      components: [
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setCustomId("dm_check_button")
-            .setLabel("확인")
-            .setStyle(ButtonStyle.Success),
-        ),
-      ],
-      files: messageOptions.files,
-    });
-    await buttonInteraction.editReply({
-      content: "메시지를 전송했습니다",
-    });
-
+    await Promise.all([
+      throwInteraction(buttonInteraction),
+      guideMessage.delete(),
+      userMessage.delete(),
+      confirmAskMessage.delete(),
+      confirmSampleMessage.delete(),
+    ]);
     const logMessage = await Vars.dmLogChannel.send({
       embeds: [
         new EmbedBuilder()
           .setColor(PColors.primary)
-          .setTitle(target.displayName + "님에게 DM을 보냈습니다.")
-          .setDescription(`### 내용\n${messageOptions.content}`),
+          .setTitle(bold(targetNames) + "님에게 DM을 보냈습니다.")
+          .setDescription(
+            `내용\n----------------------\n${messageOptions.content}`,
+          )
+          .setAuthor({
+            name: interaction.user.displayName,
+            iconURL: interaction.user.displayAvatarURL(),
+          }),
       ],
       files: messageOptions.files,
     });
-    this.messageIdMap.set(dmMessage.id, logMessage.id);
+    Promise.all(
+      targets.map(async (target) =>
+        (target.dmChannel ?? (await target.createDM())).send({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(PColors.primary)
+              .setTitle("서버메신저")
+              .setDescription(messageOptions.content)
+              .setFooter({ text: `id: ${logMessage.id}` }),
+          ],
+          components: [
+            new ActionRowBuilder<ButtonBuilder>().addComponents(
+              new ButtonBuilder()
+                .setCustomId("dm_check_button")
+                .setLabel("확인")
+                .setStyle(ButtonStyle.Success),
+            ),
+          ],
+          files: messageOptions.files,
+        }),
+      ),
+    );
   }
 
   @ButtonComponent({ id: "dm_check_button" })
@@ -138,30 +192,28 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
     if (!interaction.channel) {
       throw new Error("Channel not found");
     }
-
-    const checkEmbed = new EmbedBuilder()
-      .setColor(PColors.primary)
-      .setTitle("확인됨")
-      .setDescription(
-        bold(interaction.user.displayName) + "님이 DM을 확인했습니다",
-      );
-    const logMessageId = this.messageIdMap.get(interaction.message.id);
-    if (logMessageId) {
-      this.messageIdMap.delete(interaction.message.id);
-
-      const logMessage = await Vars.dmLogChannel.messages.fetch(logMessageId);
-      await logMessage.reply({
-        embeds: [checkEmbed],
-      });
-    } else {
-      await Vars.dmLogChannel.send({
-        embeds: [checkEmbed],
-      });
-    }
-
-    await interaction.reply({
-      content: "확인했습니다",
-      ephemeral: true,
-    });
+    const logMessage = await Vars.dmLogChannel.messages.fetch(
+      interaction.message.embeds[0].footer!.text.replace("id: ", ""),
+    );
+    Promise.all([
+      logMessage.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(PColors.primary)
+            .setTitle("확인됨")
+            .setDescription(
+              bold(interaction.user.displayName) + "님이 DM을 확인했습니다",
+            ),
+        ],
+      }),
+      interaction.message.edit({ components: [] }),
+      autoDeleteMessage(
+        interaction.reply({
+          content: "확인했습니다",
+          ephemeral: true,
+        }),
+        1500,
+      ),
+    ]);
   }
 }
