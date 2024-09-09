@@ -79,8 +79,8 @@ export default class FixedMessageRegister {
       { $addToSet: { channels: channel.id } },
       { upsert: true },
     );
-    this.messageData[channel.id] ??= new Map();
     const message = await channel.send(messageOptions);
+    this.messageData[channel.id] ??= new Map();
     this.messageData[channel.id].set(message.id, {
       channel,
       messageOptions,
