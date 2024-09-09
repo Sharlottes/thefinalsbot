@@ -47,22 +47,17 @@ export default function InputMessageManager<T extends PTTypes>() {
     protected responsedMessages: Discord.Message[] = [];
     protected inputResolver!: PrimitiveInputResolver<PT>;
 
-    public static override async createOnChannel<PT extends PrimitiveInputType>(
+    public declare static createOnChannel: <PT extends PrimitiveInputType>(
       sender: Discord.PartialTextBasedChannelFields,
       managerOptions: InputOptions<PT, T>,
       options?: Omit<Discord.MessageCreateOptions, keyof MessageData>,
-    ) {
-      const messageData = Object.assign(
-        await this.createMessageData<PT>(managerOptions),
-        options,
-      );
-      const isEmpty = this.isDataEmpty(messageData);
-      if (isEmpty) {
-        messageData.content = "\u200b";
-      }
-      const message = await sender.send(messageData);
-      return this.createManager<PT>(message, messageData, managerOptions);
-    }
+    ) => Promise<InputMessageManager<PT>>;
+
+    public declare static createOnInteraction: <PT extends PrimitiveInputType>(
+      sender: Discord.RepliableInteraction,
+      managerOptions: InputOptions<PT, T>,
+      options?: Omit<Discord.InteractionReplyOptions, keyof MessageData>,
+    ) => Promise<InputMessageManager<PT>>;
 
     protected static override async createMessageData<
       PT extends PrimitiveInputType,

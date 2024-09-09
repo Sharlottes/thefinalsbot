@@ -51,7 +51,7 @@ export default function MessageManager<OT = unknown>() {
       sender: Discord.RepliableInteraction,
       managerOptions: OT,
       options?: Omit<Discord.InteractionReplyOptions, keyof MessageData>,
-    ) {
+    ): Promise<InstanceType<typeof MessageManager>> {
       const messageData = Object.assign(
         await this.createMessageData(managerOptions),
         options,
