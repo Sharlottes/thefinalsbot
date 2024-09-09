@@ -59,11 +59,11 @@ export default class RoomMaker {
           new ButtonBuilder()
             .setCustomId("show_voice_channel_invite-" + name)
             .setLabel("음성방 초대링크 확인하기")
-            .setStyle(ButtonStyle.Secondary),
+            .setStyle(ButtonStyle.Secondary) /*
           new ButtonBuilder()
             .setCustomId("change_voice_channel_capacity-" + name)
             .setLabel("음성방 인원 변경하기")
-            .setStyle(ButtonStyle.Secondary),
+            .setStyle(ButtonStyle.Secondary),*/,
         ),
       ],
     };
