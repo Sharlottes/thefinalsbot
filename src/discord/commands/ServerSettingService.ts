@@ -19,7 +19,7 @@ export default class ServerSettingService {
 
     if (roomChannel) {
       const exist = await RoomMakingDataModel.findOne({
-        channelId: roomChannel!.id,
+        channelId: roomChannel.id,
       });
       if (exist) {
         autoDeleteMessage(
@@ -53,6 +53,11 @@ export default class ServerSettingService {
           ],
         },
       ).then((m) => m.value);
+      if (!roomChannel) {
+        message.delete();
+        interaction.deleteReply();
+        return;
+      }
       await render();
     }
 
@@ -63,6 +68,11 @@ export default class ServerSettingService {
           inputResolver: InputResolvers.text,
         },
       ).then((m) => m.value);
+      if (!roomName) {
+        message.delete();
+        interaction.deleteReply();
+        return;
+      }
       await render();
     }
 
@@ -73,11 +83,16 @@ export default class ServerSettingService {
           inputResolver: InputResolvers.text,
         },
       ).then((m) => m.value);
+      if (!roomDescription) {
+        message.delete();
+        interaction.deleteReply();
+        return;
+      }
       await render();
     }
 
     await RoomMakingDataModel.create({
-      channelId: roomChannel!.id,
+      channelId: roomChannel.id,
       name: roomName,
       description: roomDescription,
     });
@@ -99,7 +114,7 @@ export default class ServerSettingService {
 
     if (roomChannel) {
       const exist = await RoomMakingDataModel.findOne({
-        channelId: roomChannel!.id,
+        channelId: roomChannel.id,
       });
       if (!exist) {
         autoDeleteMessage(
@@ -134,6 +149,11 @@ ${RoomMaker.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사�
           ],
         },
       ).then((m) => m.value);
+      if (!roomChannel) {
+        message.delete();
+        interaction.deleteReply();
+        return;
+      }
       await render();
     }
 
@@ -144,6 +164,11 @@ ${RoomMaker.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사�
           inputResolver: InputResolvers.text,
         },
       ).then((m) => m.value);
+      if (!roomName) {
+        message.delete();
+        interaction.deleteReply();
+        return;
+      }
       await render();
     }
 
@@ -154,12 +179,17 @@ ${RoomMaker.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사�
           inputResolver: InputResolvers.text,
         },
       ).then((m) => m.value);
+      if (!roomDescription) {
+        message.delete();
+        interaction.deleteReply();
+        return;
+      }
       await render();
     }
     await RoomMakingDataModel.updateOne(
-      { channelId: roomChannel!.id },
+      { channelId: roomChannel.id },
       {
-        channelId: roomChannel!.id,
+        channelId: roomChannel.id,
         name: roomName,
         description: roomDescription,
       },
@@ -195,9 +225,13 @@ ${RoomMaker.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사�
           ],
         },
       ).then((m) => m.value);
+      if (!roomChannel) {
+        interaction.deleteReply();
+        return;
+      }
     }
 
-    await RoomMakingDataModel.deleteOne({ channelId: roomChannel!.id });
+    await RoomMakingDataModel.deleteOne({ channelId: roomChannel.id });
 
     autoDeleteMessage(
       interaction.editReply("성공적으로 방 생성자를 삭제했습니다."),

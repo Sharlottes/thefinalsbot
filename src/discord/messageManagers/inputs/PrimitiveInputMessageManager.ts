@@ -1,7 +1,9 @@
+import { ComponentType } from "discord.js";
 import InputMessageManager, { InputOptions } from "./InputMessageManager";
 import { PrimitiveInputResolver, PrimitiveInputType } from "./InputResolvers";
 import Vars from "@/Vars";
 import { MessageData } from "@/discord/messageManagers/MessageManager";
+import autoDeleteMessage from "@/utils/autoDeleteMessage";
 
 export default class PrimitiveInputMessageManager<
   PT extends PrimitiveInputType,
@@ -17,9 +19,6 @@ export default class PrimitiveInputMessageManager<
     options.textValidators.push(options.inputResolver.getValidate());
     manager.value = options.value!;
     manager.inputResolver = options.inputResolver;
-    manager.rCollector = manager.message.createReactionCollector();
-    manager.mCollector = manager.message.channel.createMessageCollector();
-
     await manager.update();
     await manager.setupCollectors();
     return manager;
@@ -56,9 +55,17 @@ export default class PrimitiveInputMessageManager<
   }
 
   protected override async setupCollectors() {
+    this.rCollector = this.message.createReactionCollector({
+      filter: (reaction) => reaction.emoji.name === "👍" && reaction.count > 1,
+    });
+    this.mCollector = this.message.channel.createMessageCollector({
+      filter: (message) => message.author.id !== Vars.client.user!.id,
+    });
+    this.cCollector = this.message.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+    });
     return new Promise<void>((res) => {
       this.mCollector.on("collect", async (message) => {
-        if (message.author.id == Vars.client.user!.id) return;
         this.responsedMessages.push(message);
         const isTextValid = this.textValidate(message.content);
         if (!isTextValid) return;
@@ -72,10 +79,15 @@ export default class PrimitiveInputMessageManager<
 
         const isConfirmed = await this.askConfirm();
         if (!isConfirmed) return;
-        this.rCollector.stop();
-        this.mCollector.stop();
-        this.options.onConfirm?.(value);
-        this.remove();
+        this.options.onConfirm?.(this.value);
+        await this.end();
+        res();
+      });
+      this.cCollector.on("collect", async (interaction) => {
+        autoDeleteMessage(
+          interaction.reply({ content: "취소되었습니다.", ephemeral: true }),
+        );
+        this.end();
         res();
       });
     });

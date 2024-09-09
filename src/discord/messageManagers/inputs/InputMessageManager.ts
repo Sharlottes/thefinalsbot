@@ -3,6 +3,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   Colors,
+  ComponentType,
   EmbedBuilder,
 } from "discord.js";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
@@ -41,9 +42,10 @@ export default function InputMessageManager<T extends PTTypes>() {
   return class InputMessageManager<
     PT extends PrimitiveInputType,
   > extends MessageManager<InputOptions<any, T>>() {
-    public value!: ResolvePT<PT, T>;
+    public value?: ResolvePT<PT, T>;
     protected rCollector!: Discord.ReactionCollector;
     protected mCollector!: Discord.MessageCollector;
+    protected cCollector!: Discord.InteractionCollector<Discord.ButtonInteraction>;
     protected responsedMessages: Discord.Message[] = [];
     protected inputResolver!: PrimitiveInputResolver<PT>;
 
@@ -52,24 +54,34 @@ export default function InputMessageManager<T extends PTTypes>() {
         ReturnType<typeof MessageManager>["createOnChannel"]
       >[0],
       managerOptions: InputOptions<PT, T>,
-      options?: Omit<Discord.MessageCreateOptions, keyof MessageData>,
+      options?: Parameters<
+        ReturnType<typeof MessageManager>["createOnChannel"]
       >[2],
     ) => Promise<InputMessageManager<PT>>;
 
     public declare static createOnInteraction: <PT extends PrimitiveInputType>(
-      sender: Discord.RepliableInteraction,
       sender: Parameters<
         ReturnType<typeof MessageManager>["createOnInteraction"]
       >[0],
       managerOptions: InputOptions<PT, T>,
-      options?: Omit<Discord.InteractionReplyOptions, keyof MessageData>,
+      options?: Parameters<
+        ReturnType<typeof MessageManager>["createOnInteraction"]
       >[2],
     ) => Promise<InputMessageManager<PT>>;
 
     protected static override async createMessageData<
       PT extends PrimitiveInputType,
-    >(managerOptions: InputOptions<PT, T>): Promise<any> {
-      return super.createMessageData(managerOptions);
+    >(managerOptions: InputOptions<PT, T>) {
+      const messageData = await super.createMessageData(managerOptions);
+      messageData.components = [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setLabel("취소")
+            .setStyle(ButtonStyle.Danger)
+            .setCustomId("inputmessagemanager-cancel"),
+        ),
+      ];
+      return messageData;
     }
 
     protected static getValueString<PT extends PrimitiveInputType>(
@@ -85,7 +97,7 @@ export default function InputMessageManager<T extends PTTypes>() {
       message: Discord.Message,
       messageData: MessageData,
       options: InputOptions<PT, T>,
-    ) {
+    ): Promise<InputMessageManager<PT>> {
       const manager = new this<PT>(message, messageData, options);
       throw new Error("Not implemented");
       return manager;
@@ -98,15 +110,30 @@ export default function InputMessageManager<T extends PTTypes>() {
       ]);
     }
 
+    public async end() {
+      this.rCollector.stop();
+      this.mCollector.stop();
+      this.remove();
+    }
+
     protected async handleValue(
       message: Discord.Message,
       value: PT,
     ): Promise<void> {}
 
     protected setupCollectors() {
+      this.rCollector = this.message.createReactionCollector({
+        filter: (reaction) =>
+          reaction.emoji.name === "👍" && reaction.count > 1,
+      });
+      this.mCollector = this.message.channel.createMessageCollector({
+        filter: (message) => message.author.id !== Vars.client.user!.id,
+      });
+      this.cCollector = this.message.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+      });
       return new Promise<void>((res) => {
-        this.rCollector.on("collect", async (reaction) => {
-          if (reaction.emoji.name !== "👍" || reaction.count == 1) return;
+        this.rCollector.on("collect", async () => {
           if (!this.value) {
             autoDeleteMessage(
               this.message.channel.send("에러: 입력된 값이 없습니다."),
@@ -116,14 +143,11 @@ export default function InputMessageManager<T extends PTTypes>() {
           }
           const isConfirmed = await this.askConfirm();
           if (!isConfirmed) return;
-          this.rCollector.stop();
-          this.mCollector.stop();
           this.options.onConfirm?.(this.value);
-          this.remove();
+          await this.end();
           res();
         });
         this.mCollector.on("collect", async (message) => {
-          if (message.author.id == Vars.client.user!.id) return;
           this.responsedMessages.push(message);
           const isTextValid = this.textValidate(message.content);
           if (!isTextValid) return;
@@ -134,6 +158,13 @@ export default function InputMessageManager<T extends PTTypes>() {
           if (!isValueValid) return;
           message.react("✅");
           this.handleValue(message, value);
+        });
+        this.cCollector.on("collect", async (interaction) => {
+          autoDeleteMessage(
+            interaction.reply({ content: "취소되었습니다.", ephemeral: true }),
+          );
+          this.end();
+          res();
         });
       });
     }

@@ -69,14 +69,12 @@ export default function MessageManager<OT = unknown>() {
           return sender.reply({ ...messageData, fetchReply: true });
         }
       })();
-      return this.createManager(
-        message,
-        messageData,
-        managerOptions,
-      ) as InstanceType<T>;
+      return this.createManager(message, messageData, managerOptions);
     }
 
-    protected static async createMessageData(managerOptions: OT) {
+    protected static async createMessageData(
+      managerOptions: OT,
+    ): Promise<MessageData & OT> {
       return Object.create(emptyMessageData);
     }
 

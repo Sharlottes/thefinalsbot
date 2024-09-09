@@ -26,8 +26,6 @@ export default class ArrayInputMessageManager<
     });
     manager.value = options.value ?? [];
     manager.inputResolver = options.inputResolver;
-    manager.rCollector = manager.message.createReactionCollector();
-    manager.mCollector = manager.message.channel.createMessageCollector();
     message.react("👍");
     await manager.update();
     await manager.setupCollectors();
@@ -36,21 +34,22 @@ export default class ArrayInputMessageManager<
 
   protected static override async createMessageData<
     PT extends PrimitiveInputType,
-  >(managerOptions: ArrayInputOptions<PT>): Promise<any> {
+  >(managerOptions: ArrayInputOptions<PT>) {
     const messageData = await super.createMessageData(managerOptions);
     messageData.content = `입력 대기중...
 * 입력을 위한 ${messageData.inputResolver.getTypeString()} 메시지를 보내주세요. 
 * 순서대로 메시지를 보내주세요. ${managerOptions.maxLength === undefined ? "" : `(${managerOptions.maxLength}개까지 가능)`}
 * ${messageData.inputResolver.getDescription()}
 * 입력을 마치려면 👍이모지를 눌러주세요.
-* 현재 입력된 값: ${this.getValueString<PT>(messageData.value, messageData.inputResolver)}`;
+* 현재 입력된 값: ${this.getValueString<PT>(messageData.value as PT[], messageData.inputResolver)}`;
     return messageData;
   }
 
-  protected static getValueStringg<PT extends PrimitiveInputType>(
-    value: PT[],
+  protected static override getValueString<PT extends PrimitiveInputType>(
+    value: PT[] | undefined,
     inputResolver: PrimitiveInputResolver<PT>,
   ): string {
+    if (value === undefined) return "없음";
     return value.map((v) => inputResolver.getValueString(v)).join(", ");
   }
 

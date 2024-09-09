@@ -1,4 +1,4 @@
-import { inlineCode } from "discord.js";
+import { ComponentType, inlineCode } from "discord.js";
 import InputMessageManager, { InputOptions } from "./InputMessageManager";
 import { PrimitiveInputResolver, PrimitiveInputType } from "./InputResolvers";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
@@ -22,8 +22,6 @@ export default class ObjectInputMessageManager<
     });
     manager.value = options.value ?? {};
     manager.inputResolver = options.inputResolver;
-    manager.rCollector = manager.message.createReactionCollector();
-    manager.mCollector = manager.message.channel.createMessageCollector();
     message.react("👍");
     await manager.update();
     await manager.setupCollectors();
@@ -42,7 +40,7 @@ export default class ObjectInputMessageManager<
   }
 
   protected static override getValueString<PT extends PrimitiveInputType>(
-    value: Record<string, PT>,
+    value: Record<string, PT> | undefined,
     inputResolver: PrimitiveInputResolver<PT>,
   ): string {
     if (value === undefined) return "없음";
@@ -58,10 +56,19 @@ export default class ObjectInputMessageManager<
     );
   }
 
+  // 이거 진짜 맞나
   protected override async setupCollectors() {
+    this.rCollector = this.message.createReactionCollector({
+      filter: (reaction) => reaction.emoji.name === "👍" && reaction.count > 1,
+    });
+    this.mCollector = this.message.channel.createMessageCollector({
+      filter: (message) => message.author.id !== Vars.client.user!.id,
+    });
+    this.cCollector = this.message.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+    });
     return new Promise<void>((res) => {
-      this.rCollector.on("collect", async (reaction) => {
-        if (reaction.emoji.name !== "👍" || reaction.count == 1) return;
+      this.rCollector.on("collect", async () => {
         if (!this.value) {
           autoDeleteMessage(
             this.message.channel.send("에러: 입력된 값이 없습니다."),
@@ -71,19 +78,16 @@ export default class ObjectInputMessageManager<
         }
         const isConfirmed = await this.askConfirm();
         if (!isConfirmed) return;
-        this.rCollector.stop();
-        this.mCollector.stop();
         this.options.onConfirm?.(this.value);
-        this.remove();
+        await this.end();
         res();
       });
       this.mCollector.on("collect", async (message) => {
-        if (message.author.id == Vars.client.user!.id) return;
         this.responsedMessages.push(message);
         const isTextValid = this.textValidate(message.content);
         if (!isTextValid) return;
         const [key, v] = message.content.split(":");
-        message.content = v; // 이거 진짜 맞나
+        message.content = v;
         const value = await this.inputResolver.resolveInput(message);
         if (!value) return;
 
@@ -93,6 +97,13 @@ export default class ObjectInputMessageManager<
         this.responsedMessages.push(message);
         this.value![key] = value;
         this.update();
+      });
+      this.cCollector.on("collect", async (interaction) => {
+        autoDeleteMessage(
+          interaction.reply({ content: "취소되었습니다.", ephemeral: true }),
+        );
+        this.end();
+        res();
       });
     });
   }
