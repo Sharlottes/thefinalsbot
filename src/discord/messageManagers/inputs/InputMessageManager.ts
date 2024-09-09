@@ -48,15 +48,22 @@ export default function InputMessageManager<T extends PTTypes>() {
     protected inputResolver!: PrimitiveInputResolver<PT>;
 
     public declare static createOnChannel: <PT extends PrimitiveInputType>(
-      sender: Discord.PartialTextBasedChannelFields,
+      sender: Parameters<
+        ReturnType<typeof MessageManager>["createOnChannel"]
+      >[0],
       managerOptions: InputOptions<PT, T>,
       options?: Omit<Discord.MessageCreateOptions, keyof MessageData>,
+      >[2],
     ) => Promise<InputMessageManager<PT>>;
 
     public declare static createOnInteraction: <PT extends PrimitiveInputType>(
       sender: Discord.RepliableInteraction,
+      sender: Parameters<
+        ReturnType<typeof MessageManager>["createOnInteraction"]
+      >[0],
       managerOptions: InputOptions<PT, T>,
       options?: Omit<Discord.InteractionReplyOptions, keyof MessageData>,
+      >[2],
     ) => Promise<InputMessageManager<PT>>;
 
     protected static override async createMessageData<
