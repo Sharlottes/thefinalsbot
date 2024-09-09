@@ -3,4 +3,5 @@ interface Env {
   TEST_GUILD_ID: string;
   MASTER_USERS: string;
   MONGO_URL: string;
+  NODE_ENV: "development" | "production";
 }

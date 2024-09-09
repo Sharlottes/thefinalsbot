@@ -44,7 +44,10 @@ export default class Vars {
       .replace("file:///", "")
       .replaceAll("/", "\\");
 
-    const publicDir = path.resolve(dirname, "../public");
+    const publicDir =
+      process.env.NODE_ENV === "development"
+        ? path.resolve(dirname, "../../public")
+        : path.resolve(dirname, "../public");
     const ranksImgDir = path.resolve(publicDir, "./images/ranks");
     const fontDir = path.resolve(publicDir, "./fonts/Pretendard-Regular.otf");
     await Promise.all([
