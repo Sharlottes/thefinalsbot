@@ -25,6 +25,7 @@ type PaginationEvents = {
 interface PaginationOptions {
   size: number;
 }
+
 export default class PaginationMessageManager extends MessageManager<PaginationOptions>() {
   private currentPage = 0;
   public size!: number;
@@ -37,6 +38,16 @@ export default class PaginationMessageManager extends MessageManager<PaginationO
     this.currentPage = value;
     this.updateChanges();
   }
+
+  public declare static createOnChannel: OverwriteReturn<
+    ReturnType<typeof MessageManager>["createOnChannel"],
+    Promise<PaginationMessageManager>
+  >;
+
+  public declare static createOnInteraction: OverwriteReturn<
+    ReturnType<typeof MessageManager>["createOnInteraction"],
+    Promise<PaginationMessageManager>
+  >;
 
   protected static override async createManager(
     message: Discord.Message,

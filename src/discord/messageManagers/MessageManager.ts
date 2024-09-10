@@ -51,7 +51,7 @@ export default function MessageManager<OT = unknown>() {
       sender: Discord.RepliableInteraction,
       managerOptions: OT,
       options?: Omit<Discord.InteractionReplyOptions, keyof MessageData>,
-    ) {
+    ): Promise<InstanceType<typeof MessageManager>> {
       const messageData = Object.assign(
         await this.createMessageData(managerOptions),
         options,
@@ -69,14 +69,12 @@ export default function MessageManager<OT = unknown>() {
           return sender.reply({ ...messageData, fetchReply: true });
         }
       })();
-      return this.createManager(
-        message,
-        messageData,
-        managerOptions,
-      ) as InstanceType<T>;
+      return this.createManager(message, messageData, managerOptions);
     }
 
-    protected static async createMessageData(managerOptions: OT) {
+    protected static async createMessageData(
+      managerOptions: OT,
+    ): Promise<MessageData & OT> {
       return Object.create(emptyMessageData);
     }
 

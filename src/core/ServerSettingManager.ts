@@ -16,6 +16,8 @@ import {
 import ArrayInputMessageManager from "@/discord/messageManagers/inputs/ArrayInputMessageManager";
 import PrimitiveInputMessageManager from "@/discord/messageManagers/inputs/PrimitiveInputMessageManager";
 import ObjectInputMessageManager from "@/discord/messageManagers/inputs/ObjectInputMessageManager";
+import InputMessageManager from "@/discord/messageManagers/inputs/InputMessageManager";
+import autoDeleteMessage from "@/utils/autoDeleteMessage";
 
 const channelMap: Record<
   keyof ServerSettingData["channels"],
@@ -83,7 +85,11 @@ export default class ServerSettingManager {
               allow: "ViewChannel",
             }) as const,
         ),
-
+        {
+          type: OverwriteType.Role,
+          id: guild.roles.everyone,
+          deny: "ViewChannel",
+        },
         {
           type: OverwriteType.Role,
           id: guild.roles.highest,
@@ -165,42 +171,64 @@ ${bold("서버 설정을 완료치 않으면 봇 기능을 이용할 수 없습�
 
     if (!valueType) return [undefined, ""];
     if (valueType === String) {
-      const input = await PrimitiveInputMessageManager.createOnChannel(
-        channel,
-        {
-          inputResolver: resolver,
-          value: value as string,
-        },
-      );
-      return [
-        input.value && this.serializeValue(input.value),
-        input.getValueString(),
-      ];
+      while (true) {
+        const input = await PrimitiveInputMessageManager.createOnChannel(
+          channel,
+          {
+            inputResolver: resolver,
+            value: value as string,
+          },
+        );
+        if (!input.value) {
+          autoDeleteMessage(
+            channel.send("입력이 취소되어 다시 시도합니다."),
+            1500,
+          );
+          continue;
+        }
+        return [this.serializeValue(input.value), input.getValueString()];
+      }
     } else if (Array.isArray(valueType)) {
-      const input = await ArrayInputMessageManager.createOnChannel(channel, {
-        inputResolver: resolver,
-        value: value as string[],
-      });
-
-      return [
-        input.value.map((v) => this.serializeValue(v)),
-        input.getValueString(),
-      ];
+      while (true) {
+        const input = await ArrayInputMessageManager.createOnChannel(channel, {
+          inputResolver: resolver,
+          value: value as string[],
+        });
+        if (!input.value) {
+          autoDeleteMessage(
+            channel.send("입력이 취소되어 다시 시도합니다."),
+            1500,
+          );
+          continue;
+        }
+        return [
+          input.value.map((v) => this.serializeValue(v)),
+          input.getValueString(),
+        ];
+      }
     } else {
-      const input = await ObjectInputMessageManager.createOnChannel(channel, {
-        inputResolver: resolver,
-        value: value as Record<string, string>,
-      });
-
-      return [
-        Object.fromEntries(
-          Object.entries(input.value).map(([k, v]) => [
-            k,
-            this.serializeValue(v),
-          ]),
-        ),
-        input.getValueString(),
-      ];
+      while (true) {
+        const input = await ObjectInputMessageManager.createOnChannel(channel, {
+          inputResolver: resolver,
+          value: value as Record<string, string>,
+        });
+        if (!input.value) {
+          autoDeleteMessage(
+            channel.send("입력이 취소되어 다시 시도합니다."),
+            1500,
+          );
+          continue;
+        }
+        return [
+          Object.fromEntries(
+            Object.entries(input.value).map(([k, v]) => [
+              k,
+              this.serializeValue(v),
+            ]),
+          ),
+          input.getValueString(),
+        ];
+      }
     }
   }
 

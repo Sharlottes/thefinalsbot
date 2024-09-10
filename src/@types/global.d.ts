@@ -24,3 +24,9 @@ interface Interactive<
   handleInteraction(interaction: InteractiveTypeMap[K]): void;
   getInteractionType(): K;
 }
+
+type OverwriteReturn<T extends (...args: any[]) => any, NT> = T extends (
+  ...args: infer P
+) => any
+  ? (...args: P) => NT
+  : never;

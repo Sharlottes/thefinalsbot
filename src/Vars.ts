@@ -5,6 +5,12 @@ import fs from "fs";
 import path from "path";
 import { promisify } from "util";
 import RoomMakingDataModel from "./models/RoomMakingDataModel";
+import { ChangeStreamDocument } from "mongodb";
+import RoomsMakerService from "./discord/features/roommake/RoomsMakerService";
+import FixedMessageRegister from "./core/FixedMessageRegister";
+
+const awaitReadFile = promisify(fs.readFile);
+const awaitReadDir = promisify(fs.readdir);
 
 export default class Vars {
   // in djs, .env
@@ -34,28 +40,33 @@ export default class Vars {
   public static async init(client: DiscordX.Client): Promise<void> {
     Vars.client = client;
 
+    const dirname = import.meta.url
+      .replace("file:///", "")
+      .replaceAll("/", "\\");
+
+    const publicDir =
+      process.env.NODE_ENV === "development"
+        ? path.resolve(dirname, "../../public")
+        : path.resolve(dirname, "../public");
+    const ranksImgDir = path.resolve(publicDir, "./images/ranks");
+    const fontDir = path.resolve(publicDir, "./fonts/Pretendard-Regular.otf");
     await Promise.all([
-      promisify(fs.readdir)(
-        path.resolve(import.meta.dirname, "../public/images/ranks"),
-      ).then((files) =>
-        Promise.all(
-          files.map((file) =>
-            promisify(fs.readFile)(
-              path.resolve(
-                import.meta.dirname,
-                `../public/images/ranks/${file}`,
-              ),
-              { encoding: "base64" },
-            ).then((base64) => (Vars.images[file] = base64)),
-          ),
-        ),
-      ),
-      promisify(fs.readFile)(
-        path.resolve(
-          import.meta.dirname,
-          "../public/fonts/Pretendard-Regular.otf",
-        ),
-      ).then(
+      new Promise<void>(async (res) => {
+        const files = await awaitReadDir(ranksImgDir);
+        await Promise.all(
+          files.map(async (file) => {
+            const base64 = await awaitReadFile(
+              path.resolve(ranksImgDir, `./${file}`),
+              {
+                encoding: "base64",
+              },
+            );
+            Vars.images[file] = base64;
+          }),
+        );
+        res();
+      }),
+      awaitReadFile(fontDir).then(
         (data) =>
           (this.font = {
             name: "Pretendard",
@@ -85,6 +96,35 @@ export default class Vars {
         ),
       ),
     ]);
+
+    RoomMakingDataModel.watch<
+      RoomMakingDataData,
+      ChangeStreamDocument<RoomMakingDataData>
+    >([], {
+      fullDocument: "updateLookup",
+      fullDocumentBeforeChange: "required",
+    }).on("change", async (data) => {
+      if (data.operationType === "delete") {
+        const channel = await Vars.client.channels
+          .fetch(data.fullDocumentBeforeChange!.channelId)
+          .then((c) => Vars.validateChannel(c, ChannelType.GuildText));
+        delete Vars.roomMakingAnnounceData[channel.id];
+        await FixedMessageRegister.cancelMessage(channel);
+      } else if (
+        data.operationType === "update" ||
+        data.operationType === "insert"
+      ) {
+        const channel = await client.channels
+          .fetch(data.fullDocument!.channelId)
+          .then((c) => Vars.validateChannel(c, ChannelType.GuildText));
+        Vars.roomMakingAnnounceData[channel.id] = {
+          channel,
+          name: data.fullDocument!.name,
+          description: data.fullDocument!.description,
+        };
+        await RoomsMakerService.main.init();
+      }
+    });
   }
 
   public static async initServerSetting(client: DiscordX.Client) {

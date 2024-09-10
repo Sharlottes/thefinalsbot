@@ -45,16 +45,26 @@ export default class FixedMessageRegister {
   }
 
   public static async cancelMessage(channel: Discord.GuildTextBasedChannel) {
-    await FixedMessageModel.updateOne(
-      { guildId: channel.guild.id },
-      { $pull: { channels: channel.id } },
+    const promises: Promise<unknown>[] = [];
+    promises.push(
+      FixedMessageModel.updateOne(
+        { guildId: channel.guild.id },
+        { $pull: { channels: channel.id } },
+      ).exec(),
     );
-    const map = this.messageData[channel.id];
-    if (!map) return;
-    for (const [, data] of map) {
-      await data.currentMessage.delete();
-    }
-    delete this.messageData[channel.id];
+    promises.push(
+      new Promise(async () => {
+        const map = this.messageData[channel.id];
+        if (!map) return;
+        const promises: Promise<unknown>[] = [];
+        for (const [, data] of map) {
+          promises.push(data.currentMessage.delete());
+        }
+        await Promise.all(promises);
+        delete this.messageData[channel.id];
+      }),
+    );
+    await Promise.all(promises);
   }
 
   public static async sendMessage(
@@ -69,8 +79,8 @@ export default class FixedMessageRegister {
       { $addToSet: { channels: channel.id } },
       { upsert: true },
     );
-    this.messageData[channel.id] ??= new Map();
     const message = await channel.send(messageOptions);
+    this.messageData[channel.id] ??= new Map();
     this.messageData[channel.id].set(message.id, {
       channel,
       messageOptions,
@@ -83,15 +93,19 @@ export default class FixedMessageRegister {
   async onMessageCreate([message]: DiscordX.ArgsOf<"messageCreate">) {
     const map = FixedMessageRegister.messageData[message.channelId];
     if (!map || map.has(message.id)) return;
-    const data = map.values();
-    const promises: Promise<unknown>[] = [];
-    for (const d of data) {
+    const promises: Promise<void>[] = [];
+    for (const [id, d] of map) {
       promises.push(
-        new Promise<void>(async (res) => {
+        (async () => {
           await d.currentMessage.delete();
-          d.currentMessage = await message.channel.send(d.messageOptions);
-          res();
-        }),
+          const m = await message.channel.send(d.messageOptions);
+          map.set(m.id, {
+            channel: m.channel,
+            messageOptions: d.messageOptions,
+            currentMessage: m,
+          });
+          map.delete(id);
+        })(),
       );
     }
 
