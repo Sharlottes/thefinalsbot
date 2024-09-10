@@ -33,8 +33,8 @@ export default class FixedMessageRegister {
             if (!channel || !channel.isTextBased()) return;
             const messages = await channel.messages.fetch();
             await Promise.all(
-              messages.map((m) => {
-                if (m.author == Vars.client.user) m.delete();
+              messages.map(async (m) => {
+                if (m.author == Vars.client.user) await m.delete();
               }),
             );
           }),
@@ -42,6 +42,19 @@ export default class FixedMessageRegister {
       }),
     );
     console.timeEnd("initalizing FixedMessageRegister...");
+  }
+
+  public static async cancelMessage(channel: Discord.GuildTextBasedChannel) {
+    await FixedMessageModel.updateOne(
+      { guildId: channel.guild.id },
+      { $pull: { channels: channel.id } },
+    );
+    const map = this.messageData[channel.id];
+    if (!map) return;
+    for (const [, data] of map) {
+      await data.currentMessage.delete();
+    }
+    delete this.messageData[channel.id];
   }
 
   public static async sendMessage(
