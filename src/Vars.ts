@@ -6,7 +6,7 @@ import path from "path";
 import { promisify } from "util";
 import RoomMakingDataModel from "./models/RoomMakingDataModel";
 import { ChangeStreamDocument } from "mongodb";
-import RoomMaker from "./discord/features/RoomsMaker";
+import RoomsMakerService from "./discord/features/roommake/RoomsMakerService";
 import FixedMessageRegister from "./core/FixedMessageRegister";
 
 const awaitReadFile = promisify(fs.readFile);
@@ -122,7 +122,7 @@ export default class Vars {
           name: data.fullDocument!.name,
           description: data.fullDocument!.description,
         };
-        await RoomMaker.main.init();
+        await RoomsMakerService.main.init();
       }
     });
   }

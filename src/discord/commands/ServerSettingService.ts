@@ -4,7 +4,7 @@ import ErrorMessageManager from "../messageManagers/ErrorMessageManager";
 import PrimitiveInputMessageManager from "../messageManagers/inputs/PrimitiveInputMessageManager";
 import { InputResolvers } from "../messageManagers/inputs/InputResolvers";
 import RoomMakingDataModel from "@/models/RoomMakingDataModel";
-import RoomMaker from "../features/RoomsMaker";
+import RoomsMakerService from "../features/roommake/RoomsMakerService";
 
 export default class ServerSettingService {
   public static readonly main = new this();
@@ -47,8 +47,10 @@ export default class ServerSettingService {
           valueValidators: [
             {
               callback: (channel) =>
-                !RoomMaker.main.data.find((d) => d.channel.id == channel.id),
-              invalidMessage: `${RoomMaker.main.data.map((d) => channelMention(d.channel.id)).join(", ")}들은 이미 사용 중인 채널입니다.`,
+                !RoomsMakerService.main.data.find(
+                  (d) => d.channel.id == channel.id,
+                ),
+              invalidMessage: `${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", ")}들은 이미 사용 중인 채널입니다.`,
             },
           ],
         },
@@ -142,9 +144,11 @@ export default class ServerSettingService {
           valueValidators: [
             {
               callback: (channel) =>
-                !!RoomMaker.main.data.find((d) => d.channel.id == channel.id),
+                !!RoomsMakerService.main.data.find(
+                  (d) => d.channel.id == channel.id,
+                ),
               invalidMessage: `이 채널은 등록되지 않았습니다.
-${RoomMaker.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사이에서 선택해 주세요.`,
+${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사이에서 선택해 주세요.`,
             },
           ],
         },
@@ -218,9 +222,11 @@ ${RoomMaker.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사�
           valueValidators: [
             {
               callback: (channel) =>
-                !!RoomMaker.main.data.find((d) => d.channel.id == channel.id),
+                !!RoomsMakerService.main.data.find(
+                  (d) => d.channel.id == channel.id,
+                ),
               invalidMessage: `이 채널은 등록되지 않았습니다.
-${RoomMaker.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사이에서 선택해 주세요.`,
+${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사이에서 선택해 주세요.`,
             },
           ],
         },
@@ -244,8 +250,8 @@ ${RoomMaker.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사�
 
     await interaction.reply({
       embeds: [
-        new EmbedBuilder().setTitle("RoomMaker 목록").setDescription(`
-      ${RoomMaker.main.data
+        new EmbedBuilder().setTitle("RoomsMakerService 목록").setDescription(`
+      ${RoomsMakerService.main.data
         .map((data) => `* ${data.name}: ${channelMention(data.channel.id)}`)
         .join("\n")}`),
       ],

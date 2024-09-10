@@ -25,7 +25,7 @@ import {
   TextInputResolver,
 } from "../messageManagers/inputs/InputResolvers";
 import RoomMakingDataModel from "@/models/RoomMakingDataModel";
-import RoomMaker from "../features/RoomsMaker";
+import RoomsMakerService from "../features/roommake/RoomsMakerService";
 import ServerSettingService from "./ServerSettingService";
 import SlashOptionBuilder from "@/utils/SlashOptionBuilder";
 
