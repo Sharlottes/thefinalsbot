@@ -2,8 +2,8 @@ import mongoose, { Schema, Model, HydratedDocument } from "mongoose";
 
 declare global {
   interface FixedMessageData {
-    messageId: string;
-    channelId: string;
+    guildId: string;
+    channels: string[];
   }
 }
 interface FixedMessageModel extends Model<FixedMessageData, {}, {}> {
@@ -12,12 +12,9 @@ interface FixedMessageModel extends Model<FixedMessageData, {}, {}> {
   ): Promise<HydratedDocument<FixedMessageData, {}> | undefined>;
 }
 const fixedMessageSchema = new Schema<FixedMessageData, FixedMessageModel, {}>({
-  messageId: { type: String, required: true, unique: true },
-  channelId: { type: String, required: true },
+  guildId: { type: String, required: true, unique: true },
+  channels: { type: [String], required: true, unique: true },
 });
 
-const FixedMessageModel = mongoose.model<FixedMessageData, FixedMessageModel>(
-  "FixedMessage",
-  fixedMessageSchema,
-);
+const FixedMessageModel = mongoose.model<FixedMessageData, FixedMessageModel>("FixedMessage", fixedMessageSchema);
 export default FixedMessageModel;

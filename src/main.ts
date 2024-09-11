@@ -8,29 +8,20 @@ import { dirname, importx } from "@discordx/importer";
 import * as Discord from "discord.js";
 import Vars from "./Vars";
 import MatchMaker from "./discord/features/MatchMaker";
-import RoomsMaker from "./discord/features/RoomsMaker";
+import RoomsMakerService from "./discord/features/roommake/RoomsMakerService";
 import FixedMessageRegister from "./core/FixedMessageRegister";
 import mongoose from "mongoose";
 import ServerSettingManager from "./core/ServerSettingManager";
 
 process
   .on("unhandledRejection", (err) => {
-    console.error(
-      `[${new Date().toISOString()}] Unhandled Promise Rejection:\n`,
-      err,
-    );
+    console.error(`[${new Date().toISOString()}] Unhandled Promise Rejection:\n`, err);
   })
   .on("uncaughtException", (err) => {
-    console.error(
-      `[${new Date().toISOString()}] Uncaught Promise Exception:\n`,
-      err,
-    );
+    console.error(`[${new Date().toISOString()}] Uncaught Promise Exception:\n`, err);
   })
   .on("uncaughtExceptionMonitor", (err) => {
-    console.error(
-      `[${new Date().toISOString()}] Uncaught Promise Exception (Monitor):\n`,
-      err,
-    );
+    console.error(`[${new Date().toISOString()}] Uncaught Promise Exception (Monitor):\n`, err);
   });
 dotenv.config();
 
@@ -46,11 +37,7 @@ export const client = new Client({
     Discord.GatewayIntentBits.GuildMessageReactions,
     Discord.GatewayIntentBits.GuildVoiceStates,
   ],
-  partials: [
-    Discord.Partials.Message,
-    Discord.Partials.Channel,
-    Discord.Partials.Reaction,
-  ],
+  partials: [Discord.Partials.Message, Discord.Partials.Channel, Discord.Partials.Reaction],
   botGuilds: [process.env.TEST_GUILD_ID],
 });
 
@@ -70,4 +57,4 @@ await Vars.init(client);
 await ServerSettingManager.main.init(client);
 await Vars.initServerSetting(client);
 await FixedMessageRegister.main.init();
-await Promise.all([MatchMaker.main.init(), RoomsMaker.main.init()]);
+await Promise.all([MatchMaker.main.init(), RoomsMakerService.main.init()]);

@@ -1,10 +1,4 @@
-import {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ComponentType,
-} from "discord.js";
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from "discord.js";
 import onlyOwner from "./onlyOwner";
 import PColors from "@/constants/PColors";
 
@@ -20,18 +14,13 @@ export default async function sendConfirmMessage(
     disagreeMessage?: string;
     timeoutMessage?: string;
     removeOnDisagree?: boolean;
-  } & Omit<
-    Discord.InteractionEditReplyOptions & Discord.InteractionReplyOptions,
-    "embeds" | "components"
-  > = {
+  } & Omit<Discord.InteractionEditReplyOptions & Discord.InteractionReplyOptions, "embeds" | "components"> = {
     timeoutMessage: "시간이 초과되었습니다.",
     removeOnDisagree: true,
   },
 ): Promise<boolean | null> {
   const embed =
-    typeof content === "string"
-      ? new EmbedBuilder({ description: content }).setColor(PColors.primary)
-      : content;
+    typeof content === "string" ? new EmbedBuilder({ description: content }).setColor(PColors.primary) : content;
   const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder({
       label: "네",
@@ -44,9 +33,7 @@ export default async function sendConfirmMessage(
       customId: "disagree",
     }),
   );
-  const message = await interaction[
-    interaction.deferred || interaction.replied ? "editReply" : "reply"
-  ]({
+  const message = await interaction[interaction.deferred || interaction.replied ? "editReply" : "reply"]({
     embeds: [embed],
     components: [buttons],
     ...(options as any),
@@ -67,6 +54,7 @@ export default async function sendConfirmMessage(
     })
     .catch(() => null);
 
+  await message.delete();
   if (res === null) {
     await interaction.editReply({
       content: timeoutMessage,

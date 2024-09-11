@@ -4,17 +4,13 @@ import { Discord, On } from "discordx";
 
 interface FixedMessageData {
   channel: Discord.TextBasedChannel;
-  messageOptions:
-    | string
-    | Discord.MessagePayload
-    | Discord.MessageCreateOptions;
+  messageOptions: string | Discord.MessagePayload | Discord.MessageCreateOptions;
   currentMessage: Discord.Message;
-  type: "remove" | "keep";
 }
 
 @Discord()
 export default class FixedMessageRegister {
-  private static messageData: FixedMessageData[] = [];
+  private static messageData: Record<string, Map<string, FixedMessageData>> = {};
 
   public static main: FixedMessageRegister;
   constructor() {
@@ -22,62 +18,90 @@ export default class FixedMessageRegister {
   }
 
   public async init() {
-    console.time("initalizing FixedMessageRegister...");
-    const messages = await FixedMessageModel.find();
+    console.time("Initializing FixedMessageRegister...");
+    const allData = await FixedMessageModel.find();
     await Promise.all(
-      messages.map((fixedMessageData) =>
-        Promise.all([
-          Vars.mainGuild.channels
-            .fetch(fixedMessageData.channelId)
-            .then((channel) =>
-              (channel as Discord.TextBasedChannel).messages.fetch(
-                fixedMessageData.messageId,
-              ),
-            )
-            .then((message) => message.delete()),
-          FixedMessageModel.deleteOne({
-            messageId: fixedMessageData.messageId,
+      allData.map(async (data) => {
+        const guild = await Vars.client.guilds.fetch(data.guildId);
+
+        await Promise.all(
+          data.channels.map(async (channelId) => {
+            const channel = await guild.channels.fetch(channelId);
+            if (!channel || !channel.isTextBased()) return;
+
+            const messages = await channel.messages.fetch();
+
+            await Promise.all(
+              messages.map(async (m) => {
+                if (m.author == Vars.client.user) await m.delete();
+              }),
+            );
           }),
-        ]),
-      ),
-    ),
-      console.timeEnd("initalizing FixedMessageRegister...");
+        );
+      }),
+    );
+    console.timeEnd("Initializing FixedMessageRegister...");
+  }
+
+  public static async cancelMessage(channel: Discord.GuildTextBasedChannel) {
+    const promises: Promise<unknown>[] = [];
+    promises.push(
+      FixedMessageModel.updateOne({ guildId: channel.guild.id }, { $pull: { channels: channel.id } }).exec(),
+    );
+    promises.push(
+      new Promise(async () => {
+        const map = this.messageData[channel.id];
+        if (!map) return;
+        const promises: Promise<unknown>[] = [];
+        for (const [, data] of map) {
+          promises.push(data.currentMessage.delete());
+        }
+        await Promise.all(promises);
+        delete this.messageData[channel.id];
+      }),
+    );
+    await Promise.all(promises);
   }
 
   public static async sendMessage(
-    channel: Discord.TextBasedChannel,
-    messageOptions:
-      | string
-      | Discord.MessagePayload
-      | Discord.BaseMessageOptions,
-    type: FixedMessageData["type"] = "remove",
+    channel: Discord.GuildTextBasedChannel,
+    messageOptions: string | Discord.MessagePayload | Discord.BaseMessageOptions,
   ) {
+    await FixedMessageModel.updateOne(
+      { guildId: channel.guild.id },
+      { $addToSet: { channels: channel.id } },
+      { upsert: true },
+    );
     const message = await channel.send(messageOptions);
-    await FixedMessageModel.create({
-      messageId: message.id,
-      channelId: channel.id,
-    });
-    this.messageData.push({
+    this.messageData[channel.id] ??= new Map();
+    this.messageData[channel.id].set(message.id, {
       channel,
       messageOptions,
       currentMessage: message,
-      type,
     });
     return message;
   }
 
   @On({ event: "messageCreate" })
   async onMessageCreate([message]: DiscordX.ArgsOf<"messageCreate">) {
-    for (const data of FixedMessageRegister.messageData) {
-      if (data.channel.id !== message.channel.id || message.author.bot)
-        continue;
-
-      if (data.type === "remove") {
-        await message.delete();
-      } else {
-        await data.currentMessage.delete();
-        data.currentMessage = await data.channel.send(data.messageOptions);
-      }
+    const map = FixedMessageRegister.messageData[message.channelId];
+    if (!map || map.has(message.id)) return;
+    const promises: Promise<void>[] = [];
+    for (const [id, d] of map) {
+      promises.push(
+        (async () => {
+          await d.currentMessage.delete();
+          const m = await message.channel.send(d.messageOptions);
+          map.set(m.id, {
+            channel: m.channel,
+            messageOptions: d.messageOptions,
+            currentMessage: m,
+          });
+          map.delete(id);
+        })(),
+      );
     }
+
+    await Promise.all(promises);
   }
 }

@@ -20,14 +20,10 @@ export default function createComponent(format: Format) {
 
   return builder;
 }
-export function createComponents(
-  ...formatsList: (Discord.ActionRowBuilder | Format[])[]
-): Discord.ActionRowBuilder[] {
+export function createComponents(...formatsList: (Discord.ActionRowBuilder | Format[])[]): Discord.ActionRowBuilder[] {
   return formatsList.map((formats) =>
     Array.isArray(formats)
-      ? new ActionRowBuilder<ButtonBuilder>().addComponents(
-          formats.map(createComponent),
-        )
+      ? new ActionRowBuilder<ButtonBuilder>().addComponents(formats.map(createComponent))
       : formats,
   );
 }

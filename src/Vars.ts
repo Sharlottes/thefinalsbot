@@ -4,45 +4,58 @@ import { SatoriOptions } from "satori/wasm";
 import fs from "fs";
 import path from "path";
 import { promisify } from "util";
+import RoomMakingDataModel from "./models/RoomMakingDataModel";
+import { ChangeStreamDocument } from "mongodb";
+import RoomsMakerService from "./discord/features/roommake/RoomsMakerService";
+import FixedMessageRegister from "./core/FixedMessageRegister";
 
 const awaitReadFile = promisify(fs.readFile);
 const awaitReadDir = promisify(fs.readdir);
 
 export default class Vars {
+  // in djs, .env
   static client: DiscordX.Client;
   static mainGuild: Discord.Guild;
   static masterUsers: Discord.User[] = [];
-  static roomMakingAnnounceChannels: Record<string, Discord.TextChannel> = {};
+
+  // in DB
+  static roomMakingAnnounceData: Record<
+    string,
+    {
+      channel: Discord.TextChannel;
+      name: string;
+      description: string;
+    }
+  > = {};
   static dmLogChannel: Discord.TextChannel;
   static matchMakingAnnounceChannel: Discord.TextChannel;
   static matchMakingWaitingChannel: Discord.VoiceBasedChannel;
   static matchMakingCategory: Discord.CategoryChannel;
   static banInviteGuilds: string[];
+
+  // in public
   static font: SatoriOptions["fonts"][number];
   static images: Record<string, string> = {};
 
   public static async init(client: DiscordX.Client): Promise<void> {
     Vars.client = client;
 
-    const dirname = import.meta.url
-      .replace("file:///", "")
-      .replaceAll("/", "\\");
+    const dirname = import.meta.url.replace("file:///", "").replaceAll("/", "\\");
 
-    const publicDir = path.resolve(dirname, "../public");
+    const publicDir =
+      process.env.NODE_ENV === "development"
+        ? path.resolve(dirname, "../../public")
+        : path.resolve(dirname, "../public");
     const ranksImgDir = path.resolve(publicDir, "./images/ranks");
     const fontDir = path.resolve(publicDir, "./fonts/Pretendard-Regular.otf");
-
     await Promise.all([
       new Promise<void>(async (res) => {
         const files = await awaitReadDir(ranksImgDir);
         await Promise.all(
           files.map(async (file) => {
-            const base64 = await awaitReadFile(
-              path.resolve(ranksImgDir, `./${file}`),
-              {
-                encoding: "base64",
-              },
-            );
+            const base64 = await awaitReadFile(path.resolve(ranksImgDir, `./${file}`), {
+              encoding: "base64",
+            });
             Vars.images[file] = base64;
           }),
         );
@@ -57,26 +70,52 @@ export default class Vars {
             style: "normal",
           }),
       ),
-      client.guilds
-        .fetch(process.env.TEST_GUILD_ID)
-        .then((g) => (Vars.mainGuild = g)),
-      ...process.env.MASTER_USERS.split(",").map((id) =>
-        client.users.fetch(id).then((u) => Vars.masterUsers.push(u)),
+      client.guilds.fetch(process.env.TEST_GUILD_ID).then((g) => (Vars.mainGuild = g)),
+      ...process.env.MASTER_USERS.split(",").map((id) => client.users.fetch(id).then((u) => Vars.masterUsers.push(u))),
+      RoomMakingDataModel.find().then((data) =>
+        Promise.all(
+          data.map(async (d) => {
+            const channel = await client.channels
+              .fetch(d.channelId)
+              .then((c) => Vars.validateChannel(c, ChannelType.GuildText));
+            Vars.roomMakingAnnounceData[channel.id] = {
+              channel,
+              name: d.name,
+              description: d.description,
+            };
+          }),
+        ),
       ),
     ]);
+
+    RoomMakingDataModel.watch<RoomMakingDataData, ChangeStreamDocument<RoomMakingDataData>>([], {
+      fullDocument: "updateLookup",
+      fullDocumentBeforeChange: "required",
+    }).on("change", async (data) => {
+      if (data.operationType === "delete") {
+        const channel = await Vars.client.channels
+          .fetch(data.fullDocumentBeforeChange!.channelId)
+          .then((c) => Vars.validateChannel(c, ChannelType.GuildText));
+        delete Vars.roomMakingAnnounceData[channel.id];
+        await FixedMessageRegister.cancelMessage(channel);
+      } else if (data.operationType === "update" || data.operationType === "insert") {
+        const channel = await client.channels
+          .fetch(data.fullDocument!.channelId)
+          .then((c) => Vars.validateChannel(c, ChannelType.GuildText));
+        Vars.roomMakingAnnounceData[channel.id] = {
+          channel,
+          name: data.fullDocument!.name,
+          description: data.fullDocument!.description,
+        };
+        await RoomsMakerService.main.init();
+      }
+    });
   }
+
   public static async initServerSetting(client: DiscordX.Client) {
     const serverSettings = ServerSettingManager.main.getSetting();
     if (!serverSettings) throw new Error("ServerSettings not found");
     await Promise.all([
-      ...Array.from(
-        serverSettings.channels.roomMakingAnnounceChannels.entries(),
-      ).map(async ([name, id]) =>
-        client.channels
-          .fetch(id)
-          .then((c) => Vars.validateChannel(c, ChannelType.GuildText))
-          .then((c) => (Vars.roomMakingAnnounceChannels[name] = c)),
-      ),
       client.channels
         .fetch(serverSettings.channels.dmLogChannelId)
         .then((c) => Vars.validateChannel(c, ChannelType.GuildText))

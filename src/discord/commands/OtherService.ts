@@ -10,9 +10,7 @@ export default class OtherService {
   })
   ping(interaction: Discord.ChatInputCommandInteraction) {
     const ping = Date.now() - interaction.createdTimestamp;
-    const embed = new EmbedBuilder()
-      .setColor(PColors.primary)
-      .setTitle("ping: " + ping + "ms");
+    const embed = new EmbedBuilder().setColor(PColors.primary).setTitle("ping: " + ping + "ms");
     interaction.reply({ embeds: [embed] });
   }
 }

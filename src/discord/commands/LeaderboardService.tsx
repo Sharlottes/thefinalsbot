@@ -1,9 +1,4 @@
-import {
-  ApplicationCommandOptionType,
-  AttachmentBuilder,
-  EmbedBuilder,
-  codeBlock,
-} from "discord.js";
+import { ApplicationCommandOptionType, AttachmentBuilder, EmbedBuilder, codeBlock } from "discord.js";
 import { Slash, SlashOption, Discord } from "discordx";
 import { StatusCodes } from "http-status-codes";
 import Vars from "@/Vars";
@@ -37,8 +32,7 @@ const rankColor = [0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8, 0xe0115f];
 
 const VersionParameter = SlashOptionBuilder.create({
   name: "버전",
-  description:
-    "리더보드 시즌을 선택합니다. (cb1, cb2, ob, s1, s2, live, s3, s3worldtour)",
+  description: "리더보드 시즌을 선택합니다. (cb1, cb2, ob, s1, s2, live, s3, s3worldtour)",
   required: false,
   type: ApplicationCommandOptionType.String,
   default: "s3",
@@ -82,9 +76,7 @@ export default class LeaderboardService {
     if (!version || !platform) return;
 
     await interaction.deferReply();
-    const result = await fetch(
-      `https://api.the-finals-leaderboard.com/v1/leaderboard/${version}/${platform}`,
-    )
+    const result = await fetch(`https://api.the-finals-leaderboard.com/v1/leaderboard/${version}/${platform}`)
       .then(async (response) => ({
         status: response.status,
         data: (await response.json()) as LeaderboardData,
@@ -92,9 +84,7 @@ export default class LeaderboardService {
       .catch((e) => console.warn(e)); // print warning and ignore.
 
     if (result === undefined || result.status != StatusCodes.OK) {
-      interaction.editReply(
-        "서버에 문제가 있어 명령어를 처리할 수 없습니다. X(",
-      );
+      interaction.editReply("서버에 문제가 있어 명령어를 처리할 수 없습니다. X(");
       return;
     }
     if (result.data.count === 0) {
@@ -102,17 +92,12 @@ export default class LeaderboardService {
       return;
     }
 
-    const manager = await new PaginationMessageManager.Builder().send(
-      "interaction",
-      interaction,
-      { size: ~~(result.data.count / 10) },
-    );
+    const manager = await PaginationMessageManager.createOnInteraction(interaction, {
+      size: ~~(result.data.count / 10),
+    });
     const handleChange = async () => {
       const svg = await this.buildTableImg(
-        result.data.data!.slice(
-          manager.$currentPage * 10,
-          (manager.$currentPage + 1) * 10,
-        ),
+        result.data.data!.slice(manager.$currentPage * 10, (manager.$currentPage + 1) * 10),
         platform,
         version,
       );
@@ -160,47 +145,30 @@ export default class LeaderboardService {
       return;
     }
 
-    const manager = await new PaginationMessageManager.Builder().send(
-      "interaction",
-      interaction,
-      { size: result.data.count },
-    );
+    const manager = await PaginationMessageManager.createOnInteraction(interaction, { size: result.data.count });
     const handleChange = async () => {
       const data = result.data.data![manager.$currentPage]; // 순서상 data가 없는건 불가능
       const rankImgUri =
-        "league" in data
-          ? `public/images/ranks/${data.league.toLowerCase().replaceAll(" ", "-")}.png`
-          : "";
+        "league" in data ? `public/images/ranks/${data.league.toLowerCase().replaceAll(" ", "-")}.png` : "";
 
       manager.messageData.embeds = [this.buildUserDataEmbed(data)];
-      manager.messageData.files =
-        "league" in data ? [new AttachmentBuilder(rankImgUri)] : [];
+      manager.messageData.files = "league" in data ? [new AttachmentBuilder(rankImgUri)] : [];
       await manager.update();
     };
     await handleChange();
     manager.events.on("change", handleChange);
   }
 
-  async buildTableImg(
-    dataset: LeaderBoardUserData[],
-    platform: string,
-    version: string,
-  ) {
-    const tableCells: React.JSX.Element[][] = Array.from(
-      { length: 4 },
-      () => [],
-    );
+  async buildTableImg(dataset: LeaderBoardUserData[], platform: string, version: string) {
+    const tableCells: React.JSX.Element[][] = Array.from({ length: 4 }, () => []);
     dataset.map((data, i) => {
-      tableCells[0].push(
-        <p style={{ margin: 0, height: "32px" }}>#{data.rank}</p>,
-      );
+      tableCells[0].push(<p style={{ margin: 0, height: "32px" }}>#{data.rank}</p>);
       tableCells[1].push(
         "change" in data ? (
           <p
             style={{
               margin: 0,
-              color:
-                data.change > 0 ? colors.greenDark.green4 : colors.redDark.red4,
+              color: data.change > 0 ? colors.greenDark.green4 : colors.redDark.red4,
               height: "32px",
             }}
           >
@@ -210,19 +178,12 @@ export default class LeaderboardService {
           <></>
         ),
       );
-      tableCells[2].push(
-        <p style={{ margin: 0, height: "32px" }}>{data.name}</p>,
-      );
+      tableCells[2].push(<p style={{ margin: 0, height: "32px" }}>{data.name}</p>);
       tableCells[3].push(
         "league" in data ? (
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <img
-              src={
-                "data:image/png;base64," +
-                Vars.images[
-                  `${data.league.toLowerCase().replaceAll(" ", "-")}.png`
-                ]
-              }
+              src={"data:image/png;base64," + Vars.images[`${data.league.toLowerCase().replaceAll(" ", "-")}.png`]}
               width={32}
               height={32}
             />
@@ -235,16 +196,8 @@ export default class LeaderboardService {
               }}
             >
               <p style={{ margin: 0, fontSize: "0.75em" }}>{data.league}</p>
-              {"cashouts" in data && (
-                <p style={{ margin: 0, fontSize: "0.75em" }}>
-                  ${data.cashouts}
-                </p>
-              )}
-              {"rankScore" in data && (
-                <p style={{ margin: 0, fontSize: "0.75em" }}>
-                  {data.rankScore}p
-                </p>
-              )}
+              {"cashouts" in data && <p style={{ margin: 0, fontSize: "0.75em" }}>${data.cashouts}</p>}
+              {"rankScore" in data && <p style={{ margin: 0, fontSize: "0.75em" }}>{data.rankScore}p</p>}
             </div>
           </div>
         ) : "cashouts" in data ? (
@@ -341,9 +294,7 @@ export default class LeaderboardService {
         //inline: true
       });
     if ("league" in data) {
-      builder.setThumbnail(
-        `attachment://${data.league.toLowerCase().replaceAll(" ", "-")}.png`,
-      );
+      builder.setThumbnail(`attachment://${data.league.toLowerCase().replaceAll(" ", "-")}.png`);
       builder.addFields({
         name: "랭크", //" ═══•°• 랭크 •°•═══",
         value: codeBlock(`${data.league}`),
@@ -352,10 +303,7 @@ export default class LeaderboardService {
     if ("change" in data) {
       builder.addFields({
         name: "변동", //" ══•°• 24시간 •°•══",
-        value: codeBlock(
-          "diff",
-          `${data.change > 0 ? "+" + data.change : data.change}`,
-        ),
+        value: codeBlock("diff", `${data.change > 0 ? "+" + data.change : data.change}`),
       });
     }
     return builder;

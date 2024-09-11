@@ -18,9 +18,11 @@ type Override<
 interface InteractiveTypeMap {
   button: Discord.ButtonInteraction;
 }
-interface Interactive<
-  K extends keyof InteractiveTypeMap = keyof InteractiveTypeMap,
-> {
+interface Interactive<K extends keyof InteractiveTypeMap = keyof InteractiveTypeMap> {
   handleInteraction(interaction: InteractiveTypeMap[K]): void;
   getInteractionType(): K;
 }
+
+type OverwriteReturn<T extends (...args: any[]) => any, NT> = T extends (...args: infer P) => any
+  ? (...args: P) => NT
+  : never;
