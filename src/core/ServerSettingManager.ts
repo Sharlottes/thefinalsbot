@@ -1,13 +1,6 @@
 import ServerSettingModel, { ChannelsSchema } from "@/models/ServerSetting";
 import Vars from "@/Vars";
-import {
-  ActionRowBuilder,
-  bold,
-  ButtonBuilder,
-  ButtonStyle,
-  ChannelType,
-  OverwriteType,
-} from "discord.js";
+import { ActionRowBuilder, bold, ButtonBuilder, ButtonStyle, ChannelType, OverwriteType } from "discord.js";
 import {
   InputResolvers,
   PrimitiveInputResolver,
@@ -19,10 +12,7 @@ import ObjectInputMessageManager from "@/discord/messageManagers/inputs/ObjectIn
 import InputMessageManager from "@/discord/messageManagers/inputs/InputMessageManager";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 
-const channelMap: Record<
-  keyof ServerSettingData["channels"],
-  { name: string; type: keyof typeof InputResolvers }
-> = {
+const channelMap: Record<keyof ServerSettingData["channels"], { name: string; type: keyof typeof InputResolvers }> = {
   dmLogChannelId: { name: "DM 로그 채널", type: "channel" },
   matchmakedCategoryId: {
     name: "매치메이킹된 방들이 들어갈 카테고리",
@@ -41,9 +31,7 @@ const channelMap: Record<
 export default class ServerSettingManager {
   static #main: ServerSettingManager;
   public static get main(): ServerSettingManager {
-    return (
-      this.#main ?? (ServerSettingManager.#main = new ServerSettingManager())
-    );
+    return this.#main ?? (ServerSettingManager.#main = new ServerSettingManager());
   }
   private readonly settingMap: Map<string, ServerSettingData> = new Map();
   private constructor() {}
@@ -121,10 +109,7 @@ export default class ServerSettingManager {
 ${bold("서버 설정을 완료치 않으면 봇 기능을 이용할 수 없습니다!")}`,
         components: [
           new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder()
-              .setCustomId("setting_detail")
-              .setLabel("세부 설정")
-              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("setting_detail").setLabel("세부 설정").setStyle(ButtonStyle.Primary),
           ),
         ],
       })
@@ -135,18 +120,11 @@ ${bold("서버 설정을 완료치 않으면 봇 기능을 이용할 수 없습�
 
     let msg = ["* 세부 설정을 시작합니다..."];
     await render();
-    for (const key of Object.keys(ChannelsSchema.obj) as unknown as Array<
-      keyof ServerSettingData["channels"]
-    >) {
-      const i =
-        msg.push(`* ${bold(channelMap[key].name)}을(를) 설정하세요.`) - 1;
+    for (const key of Object.keys(ChannelsSchema.obj) as unknown as Array<keyof ServerSettingData["channels"]>) {
+      const i = msg.push(`* ${bold(channelMap[key].name)}을(를) 설정하세요.`) - 1;
 
       await render();
-      const [value, str] = await this.resolveSettingInput(
-        channel,
-        channelMap[key].type,
-        key,
-      );
+      const [value, str] = await this.resolveSettingInput(channel, channelMap[key].type, key);
       if (!value) continue;
       // @ts-ignore
       setting.channels[key] = value;
@@ -166,24 +144,17 @@ ${bold("서버 설정을 완료치 않으면 봇 기능을 이용할 수 없습�
     value?: string | string[] | Record<string, string>,
   ): Promise<[string | string[] | Record<string, string> | undefined, string]> {
     const valueType = ChannelsSchema.obj[key];
-    const resolver: PrimitiveInputResolver<PrimitiveInputType> =
-      InputResolvers[type];
+    const resolver: PrimitiveInputResolver<PrimitiveInputType> = InputResolvers[type];
 
     if (!valueType) return [undefined, ""];
     if (valueType === String) {
       while (true) {
-        const input = await PrimitiveInputMessageManager.createOnChannel(
-          channel,
-          {
-            inputResolver: resolver,
-            value: value as string,
-          },
-        );
+        const input = await PrimitiveInputMessageManager.createOnChannel(channel, {
+          inputResolver: resolver,
+          value: value as string,
+        });
         if (!input.value) {
-          autoDeleteMessage(
-            channel.send("입력이 취소되어 다시 시도합니다."),
-            1500,
-          );
+          autoDeleteMessage(channel.send("입력이 취소되어 다시 시도합니다."), 1500);
           continue;
         }
         return [this.serializeValue(input.value), input.getValueString()];
@@ -195,16 +166,10 @@ ${bold("서버 설정을 완료치 않으면 봇 기능을 이용할 수 없습�
           value: value as string[],
         });
         if (!input.value) {
-          autoDeleteMessage(
-            channel.send("입력이 취소되어 다시 시도합니다."),
-            1500,
-          );
+          autoDeleteMessage(channel.send("입력이 취소되어 다시 시도합니다."), 1500);
           continue;
         }
-        return [
-          input.value.map((v) => this.serializeValue(v)),
-          input.getValueString(),
-        ];
+        return [input.value.map((v) => this.serializeValue(v)), input.getValueString()];
       }
     } else {
       while (true) {
@@ -213,19 +178,11 @@ ${bold("서버 설정을 완료치 않으면 봇 기능을 이용할 수 없습�
           value: value as Record<string, string>,
         });
         if (!input.value) {
-          autoDeleteMessage(
-            channel.send("입력이 취소되어 다시 시도합니다."),
-            1500,
-          );
+          autoDeleteMessage(channel.send("입력이 취소되어 다시 시도합니다."), 1500);
           continue;
         }
         return [
-          Object.fromEntries(
-            Object.entries(input.value).map(([k, v]) => [
-              k,
-              this.serializeValue(v),
-            ]),
-          ),
+          Object.fromEntries(Object.entries(input.value).map(([k, v]) => [k, this.serializeValue(v)])),
           input.getValueString(),
         ];
       }
@@ -236,8 +193,6 @@ ${bold("서버 설정을 완료치 않으면 봇 기능을 이용할 수 없습�
     if (typeof value === "string") return value;
     if ("id" in value) return value.id;
 
-    throw new Error(
-      "there are non-implemented input value in serializeValue()!",
-    );
+    throw new Error("there are non-implemented input value in serializeValue()!");
   }
 }

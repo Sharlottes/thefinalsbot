@@ -4,17 +4,13 @@ import { Discord, On } from "discordx";
 
 interface FixedMessageData {
   channel: Discord.TextBasedChannel;
-  messageOptions:
-    | string
-    | Discord.MessagePayload
-    | Discord.MessageCreateOptions;
+  messageOptions: string | Discord.MessagePayload | Discord.MessageCreateOptions;
   currentMessage: Discord.Message;
 }
 
 @Discord()
 export default class FixedMessageRegister {
-  private static messageData: Record<string, Map<string, FixedMessageData>> =
-    {};
+  private static messageData: Record<string, Map<string, FixedMessageData>> = {};
 
   public static main: FixedMessageRegister;
   constructor() {
@@ -50,10 +46,7 @@ export default class FixedMessageRegister {
   public static async cancelMessage(channel: Discord.GuildTextBasedChannel) {
     const promises: Promise<unknown>[] = [];
     promises.push(
-      FixedMessageModel.updateOne(
-        { guildId: channel.guild.id },
-        { $pull: { channels: channel.id } },
-      ).exec(),
+      FixedMessageModel.updateOne({ guildId: channel.guild.id }, { $pull: { channels: channel.id } }).exec(),
     );
     promises.push(
       new Promise(async () => {
@@ -72,10 +65,7 @@ export default class FixedMessageRegister {
 
   public static async sendMessage(
     channel: Discord.GuildTextBasedChannel,
-    messageOptions:
-      | string
-      | Discord.MessagePayload
-      | Discord.BaseMessageOptions,
+    messageOptions: string | Discord.MessagePayload | Discord.BaseMessageOptions,
   ) {
     await FixedMessageModel.updateOne(
       { guildId: channel.guild.id },

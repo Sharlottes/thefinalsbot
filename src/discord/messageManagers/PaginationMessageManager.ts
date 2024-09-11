@@ -1,12 +1,7 @@
-import {
-  PrimitiveInputType,
-  TextInputResolver,
-} from "@/discord/messageManagers/inputs/InputResolvers";
+import { PrimitiveInputType, TextInputResolver } from "@/discord/messageManagers/inputs/InputResolvers";
 import PrimitiveInputMessageManager from "@/discord/messageManagers/inputs/PrimitiveInputMessageManager";
 import ButtonComponent from "@/discord/components/ButtonComponent";
-import MessageManager, {
-  MessageData,
-} from "@/discord/messageManagers/MessageManager";
+import MessageManager, { MessageData } from "@/discord/messageManagers/MessageManager";
 import { ActionRowBuilder, ButtonStyle } from "discord.js";
 import EventEmitter from "node:events";
 import TypedEmitter from "typed-emitter";
@@ -85,8 +80,7 @@ export default class PaginationMessageManager extends MessageManager<PaginationO
                 invalidMessage: "자연수만 가능합니다.",
               };
               const onlyInRange = {
-                callback: (value: PrimitiveInputType) =>
-                  +value >= 1 && +value <= this.size,
+                callback: (value: PrimitiveInputType) => +value >= 1 && +value <= this.size,
                 invalidMessage: `1부터 ${this.size} 사이의 숫자만 가능합니다.`,
               };
               PrimitiveInputMessageManager.createOnInteraction(interaction, {
@@ -109,8 +103,7 @@ export default class PaginationMessageManager extends MessageManager<PaginationO
           {
             emoji: btn_symbols[i].symbol,
             disabled:
-              this.currentPage + btn_symbols[i].page < 0 ||
-              this.currentPage + btn_symbols[i].page > this.size - 1,
+              this.currentPage + btn_symbols[i].page < 0 || this.currentPage + btn_symbols[i].page > this.size - 1,
           },
           () => {
             this.currentPage += btn_symbols[i].page;

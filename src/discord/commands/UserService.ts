@@ -1,11 +1,4 @@
-import {
-  Slash,
-  Discord,
-  SlashOption,
-  SlashGroup,
-  ModalComponent,
-  ButtonComponent,
-} from "discordx";
+import { Slash, Discord, SlashOption, SlashGroup, ModalComponent, ButtonComponent } from "discordx";
 import {
   ActionRowBuilder,
   ApplicationCommandOptionType,
@@ -91,9 +84,7 @@ export default class UserService {
     id: "profile_register",
   })
   async RegisterForm(interaction: Discord.ModalSubmitInteraction) {
-    const [nickname, clanname] = ["nickname", "clanname"].map((n) =>
-      interaction.fields.getTextInputValue(n),
-    );
+    const [nickname, clanname] = ["nickname", "clanname"].map((n) => interaction.fields.getTextInputValue(n));
     throwInteraction(interaction);
     const session = this.getSession(interaction.user.id);
     session.profile.nickname = nickname;
@@ -118,10 +109,7 @@ export default class UserService {
     ) {
       interaction.reply({
         embeds: [
-          new EmbedBuilder()
-            .setColor(PColors.error)
-            .setTitle("이런!")
-            .setDescription("프로필을 모두 입력해주세요!"),
+          new EmbedBuilder().setColor(PColors.error).setTitle("이런!").setDescription("프로필을 모두 입력해주세요!"),
         ],
         ephemeral: true,
       });
@@ -232,10 +220,7 @@ export default class UserService {
             },
             {
               name: "포지션",
-              value:
-                { light: "소형", middle: "중형", heavy: "대형" }[
-                  user.profile.position ?? ""
-                ] || "비어있음",
+              value: { light: "소형", middle: "중형", heavy: "대형" }[user.profile.position ?? ""] || "비어있음",
               inline: true,
             },
             {

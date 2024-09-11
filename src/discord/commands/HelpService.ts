@@ -21,10 +21,7 @@ export default class HelpService {
       )
       .join("");
 
-    const embed = new EmbedBuilder()
-      .setColor(PColors.primary)
-      .setTitle("명령어")
-      .setDescription(fields);
+    const embed = new EmbedBuilder().setColor(PColors.primary).setTitle("명령어").setDescription(fields);
 
     interaction.reply({
       embeds: [embed],

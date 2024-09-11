@@ -40,21 +40,15 @@ export default class ServerSettingService {
     if (!roomChannel || !roomName || !roomDescription) await render();
 
     if (!roomChannel) {
-      roomChannel = await PrimitiveInputMessageManager.createOnChannel(
-        interaction.channel,
-        {
-          inputResolver: InputResolvers.channel,
-          valueValidators: [
-            {
-              callback: (channel) =>
-                !RoomsMakerService.main.data.find(
-                  (d) => d.channel.id == channel.id,
-                ),
-              invalidMessage: `${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", ")}들은 이미 사용 중인 채널입니다.`,
-            },
-          ],
-        },
-      ).then((m) => m.value);
+      roomChannel = await PrimitiveInputMessageManager.createOnChannel(interaction.channel, {
+        inputResolver: InputResolvers.channel,
+        valueValidators: [
+          {
+            callback: (channel) => !RoomsMakerService.main.data.find((d) => d.channel.id == channel.id),
+            invalidMessage: `${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", ")}들은 이미 사용 중인 채널입니다.`,
+          },
+        ],
+      }).then((m) => m.value);
       if (!roomChannel) {
         message.delete();
         interaction.deleteReply();
@@ -64,12 +58,9 @@ export default class ServerSettingService {
     }
 
     if (!roomName) {
-      roomName = await PrimitiveInputMessageManager.createOnChannel(
-        interaction.channel,
-        {
-          inputResolver: InputResolvers.text,
-        },
-      ).then((m) => m.value);
+      roomName = await PrimitiveInputMessageManager.createOnChannel(interaction.channel, {
+        inputResolver: InputResolvers.text,
+      }).then((m) => m.value);
       if (!roomName) {
         message.delete();
         interaction.deleteReply();
@@ -79,12 +70,9 @@ export default class ServerSettingService {
     }
 
     if (!roomDescription) {
-      roomDescription = await PrimitiveInputMessageManager.createOnChannel(
-        interaction.channel,
-        {
-          inputResolver: InputResolvers.text,
-        },
-      ).then((m) => m.value);
+      roomDescription = await PrimitiveInputMessageManager.createOnChannel(interaction.channel, {
+        inputResolver: InputResolvers.text,
+      }).then((m) => m.value);
       if (!roomDescription) {
         message.delete();
         interaction.deleteReply();
@@ -100,10 +88,7 @@ export default class ServerSettingService {
     });
 
     message.delete();
-    autoDeleteMessage(
-      interaction.channel.send("방 생성자가 등록되었습니다."),
-      1500,
-    );
+    autoDeleteMessage(interaction.channel.send("방 생성자가 등록되었습니다."), 1500);
   }
 
   public async editRoomMaker(
@@ -137,22 +122,16 @@ export default class ServerSettingService {
     if (!roomChannel || !roomName || !roomDescription) await render();
 
     if (!roomChannel) {
-      roomChannel = await PrimitiveInputMessageManager.createOnChannel(
-        interaction.channel,
-        {
-          inputResolver: InputResolvers.channel,
-          valueValidators: [
-            {
-              callback: (channel) =>
-                !!RoomsMakerService.main.data.find(
-                  (d) => d.channel.id == channel.id,
-                ),
-              invalidMessage: `이 채널은 등록되지 않았습니다.
+      roomChannel = await PrimitiveInputMessageManager.createOnChannel(interaction.channel, {
+        inputResolver: InputResolvers.channel,
+        valueValidators: [
+          {
+            callback: (channel) => !!RoomsMakerService.main.data.find((d) => d.channel.id == channel.id),
+            invalidMessage: `이 채널은 등록되지 않았습니다.
 ${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사이에서 선택해 주세요.`,
-            },
-          ],
-        },
-      ).then((m) => m.value);
+          },
+        ],
+      }).then((m) => m.value);
       if (!roomChannel) {
         message.delete();
         interaction.deleteReply();
@@ -162,12 +141,9 @@ ${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", "
     }
 
     if (!roomName) {
-      roomName = await PrimitiveInputMessageManager.createOnChannel(
-        interaction.channel,
-        {
-          inputResolver: InputResolvers.text,
-        },
-      ).then((m) => m.value);
+      roomName = await PrimitiveInputMessageManager.createOnChannel(interaction.channel, {
+        inputResolver: InputResolvers.text,
+      }).then((m) => m.value);
       if (!roomName) {
         message.delete();
         interaction.deleteReply();
@@ -177,12 +153,9 @@ ${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", "
     }
 
     if (!roomDescription) {
-      roomDescription = await PrimitiveInputMessageManager.createOnChannel(
-        interaction.channel,
-        {
-          inputResolver: InputResolvers.text,
-        },
-      ).then((m) => m.value);
+      roomDescription = await PrimitiveInputMessageManager.createOnChannel(interaction.channel, {
+        inputResolver: InputResolvers.text,
+      }).then((m) => m.value);
       if (!roomDescription) {
         message.delete();
         interaction.deleteReply();
@@ -201,36 +174,24 @@ ${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", "
     );
 
     message.delete();
-    autoDeleteMessage(
-      interaction.channel.send("방 생성자가 수정되었습니다."),
-      1500,
-    );
+    autoDeleteMessage(interaction.channel.send("방 생성자가 수정되었습니다."), 1500);
   }
 
-  public async removeRoomMaker(
-    interaction: Discord.RepliableInteraction,
-    roomChannel?: Discord.Channel,
-  ) {
+  public async removeRoomMaker(interaction: Discord.RepliableInteraction, roomChannel?: Discord.Channel) {
     if (!interaction.channel) return;
     await interaction.deferReply();
 
     if (!roomChannel) {
-      roomChannel = await PrimitiveInputMessageManager.createOnChannel(
-        interaction.channel,
-        {
-          inputResolver: InputResolvers.channel,
-          valueValidators: [
-            {
-              callback: (channel) =>
-                !!RoomsMakerService.main.data.find(
-                  (d) => d.channel.id == channel.id,
-                ),
-              invalidMessage: `이 채널은 등록되지 않았습니다.
+      roomChannel = await PrimitiveInputMessageManager.createOnChannel(interaction.channel, {
+        inputResolver: InputResolvers.channel,
+        valueValidators: [
+          {
+            callback: (channel) => !!RoomsMakerService.main.data.find((d) => d.channel.id == channel.id),
+            invalidMessage: `이 채널은 등록되지 않았습니다.
 ${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", ")} 사이에서 선택해 주세요.`,
-            },
-          ],
-        },
-      ).then((m) => m.value);
+          },
+        ],
+      }).then((m) => m.value);
       if (!roomChannel) {
         interaction.deleteReply();
         return;
@@ -239,10 +200,7 @@ ${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", "
 
     await RoomMakingDataModel.deleteOne({ channelId: roomChannel.id });
 
-    autoDeleteMessage(
-      interaction.editReply("성공적으로 방 생성자를 삭제했습니다."),
-      1500,
-    );
+    autoDeleteMessage(interaction.editReply("성공적으로 방 생성자를 삭제했습니다."), 1500);
   }
 
   public async showRoomMakers(interaction: Discord.RepliableInteraction) {
@@ -251,9 +209,7 @@ ${RoomsMakerService.main.data.map((d) => channelMention(d.channel.id)).join(", "
     await interaction.reply({
       embeds: [
         new EmbedBuilder().setTitle("RoomsMakerService 목록").setDescription(`
-      ${RoomsMakerService.main.data
-        .map((data) => `* ${data.name}: ${channelMention(data.channel.id)}`)
-        .join("\n")}`),
+      ${RoomsMakerService.main.data.map((data) => `* ${data.name}: ${channelMention(data.channel.id)}`).join("\n")}`),
       ],
     });
   }

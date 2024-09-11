@@ -1,12 +1,7 @@
 import FixedMessageRegister from "@/core/FixedMessageRegister";
 import Vars from "@/Vars";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
-import {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} from "discord.js";
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import PColors from "@/constants/PColors";
 import ErrorMessageManager from "../../messageManagers/ErrorMessageManager";
 import RoomData from "./RoomData";
@@ -25,15 +20,10 @@ export default class RoomsMakerService {
     }
 
     await Promise.all(
-      Object.entries(Vars.roomMakingAnnounceData).map(
-        async ([channelId, { channel, name, description }]) => {
-          this.data.push(new RoomData(name, channel));
-          await FixedMessageRegister.sendMessage(
-            channel,
-            RoomsMakerService.buildChannelMessage(name, description),
-          );
-        },
-      ),
+      Object.entries(Vars.roomMakingAnnounceData).map(async ([channelId, { channel, name, description }]) => {
+        this.data.push(new RoomData(name, channel));
+        await FixedMessageRegister.sendMessage(channel, RoomsMakerService.buildChannelMessage(name, description));
+      }),
     );
     console.timeEnd("initalisMaker...");
   }
@@ -67,11 +57,7 @@ export default class RoomsMakerService {
     };
   }
 
-  public async getUserVoiceChannel(
-    interaction:
-      | Discord.ButtonInteraction<"cached">
-      | Discord.ModalSubmitInteraction,
-  ) {
+  public async getUserVoiceChannel(interaction: Discord.ButtonInteraction<"cached"> | Discord.ModalSubmitInteraction) {
     const member = await interaction.guild!.members.fetch(interaction.user.id);
     return member.voice.channel;
   }
@@ -92,10 +78,7 @@ export default class RoomsMakerService {
     return null;
   }
 
-  public sendErrorMessage(
-    interaction: Discord.RepliableInteraction,
-    content: string,
-  ) {
+  public sendErrorMessage(interaction: Discord.RepliableInteraction, content: string) {
     autoDeleteMessage(
       ErrorMessageManager.createOnInteraction(
         interaction,

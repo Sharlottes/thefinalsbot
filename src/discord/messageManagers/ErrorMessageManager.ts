@@ -7,10 +7,7 @@ export interface ErrorMessageOptions {
   footer?: [string, string];
 }
 export default class ErrorMessageManager extends MessageManager<ErrorMessageOptions>() {
-  protected static override async createMessageData({
-    description,
-    footer,
-  }: ErrorMessageOptions) {
+  protected static override async createMessageData({ description, footer }: ErrorMessageOptions) {
     const messageData = await super.createMessageData({});
     messageData.embeds = [
       new Discord.EmbedBuilder()

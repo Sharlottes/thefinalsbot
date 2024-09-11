@@ -28,9 +28,9 @@ export default class ObjectInputMessageManager<
     return manager;
   }
 
-  protected static override async createMessageData<
-    PT extends PrimitiveInputType,
-  >(managerOptions: InputOptions<PT, "object">): Promise<any> {
+  protected static override async createMessageData<PT extends PrimitiveInputType>(
+    managerOptions: InputOptions<PT, "object">,
+  ): Promise<any> {
     const messageData = await super.createMessageData(managerOptions);
     messageData.content = `입력 대기중... 
       * "키":"${managerOptions.inputResolver.getTypeString()}" 서식에 따라 순서대로 메시지를 보내주세요.
@@ -50,10 +50,7 @@ export default class ObjectInputMessageManager<
   }
 
   public override getValueString(): string {
-    return ObjectInputMessageManager.getValueString(
-      this.value,
-      this.inputResolver,
-    );
+    return ObjectInputMessageManager.getValueString(this.value, this.inputResolver);
   }
 
   // 이거 진짜 맞나
@@ -70,10 +67,7 @@ export default class ObjectInputMessageManager<
     return new Promise<void>((res) => {
       this.rCollector.on("collect", async () => {
         if (!this.value) {
-          autoDeleteMessage(
-            this.message.channel.send("에러: 입력된 값이 없습니다."),
-            1500,
-          );
+          autoDeleteMessage(this.message.channel.send("에러: 입력된 값이 없습니다."), 1500);
           return;
         }
         const isConfirmed = await this.askConfirm();
@@ -99,9 +93,7 @@ export default class ObjectInputMessageManager<
         this.update();
       });
       this.cCollector.on("collect", async (interaction) => {
-        autoDeleteMessage(
-          interaction.reply({ content: "취소되었습니다.", ephemeral: true }),
-        );
+        autoDeleteMessage(interaction.reply({ content: "취소되었습니다.", ephemeral: true }));
         this.end();
         res();
       });

@@ -40,9 +40,7 @@ export default class Vars {
   public static async init(client: DiscordX.Client): Promise<void> {
     Vars.client = client;
 
-    const dirname = import.meta.url
-      .replace("file:///", "")
-      .replaceAll("/", "\\");
+    const dirname = import.meta.url.replace("file:///", "").replaceAll("/", "\\");
 
     const publicDir =
       process.env.NODE_ENV === "development"
@@ -55,12 +53,9 @@ export default class Vars {
         const files = await awaitReadDir(ranksImgDir);
         await Promise.all(
           files.map(async (file) => {
-            const base64 = await awaitReadFile(
-              path.resolve(ranksImgDir, `./${file}`),
-              {
-                encoding: "base64",
-              },
-            );
+            const base64 = await awaitReadFile(path.resolve(ranksImgDir, `./${file}`), {
+              encoding: "base64",
+            });
             Vars.images[file] = base64;
           }),
         );
@@ -75,12 +70,8 @@ export default class Vars {
             style: "normal",
           }),
       ),
-      client.guilds
-        .fetch(process.env.TEST_GUILD_ID)
-        .then((g) => (Vars.mainGuild = g)),
-      ...process.env.MASTER_USERS.split(",").map((id) =>
-        client.users.fetch(id).then((u) => Vars.masterUsers.push(u)),
-      ),
+      client.guilds.fetch(process.env.TEST_GUILD_ID).then((g) => (Vars.mainGuild = g)),
+      ...process.env.MASTER_USERS.split(",").map((id) => client.users.fetch(id).then((u) => Vars.masterUsers.push(u))),
       RoomMakingDataModel.find().then((data) =>
         Promise.all(
           data.map(async (d) => {
@@ -97,10 +88,7 @@ export default class Vars {
       ),
     ]);
 
-    RoomMakingDataModel.watch<
-      RoomMakingDataData,
-      ChangeStreamDocument<RoomMakingDataData>
-    >([], {
+    RoomMakingDataModel.watch<RoomMakingDataData, ChangeStreamDocument<RoomMakingDataData>>([], {
       fullDocument: "updateLookup",
       fullDocumentBeforeChange: "required",
     }).on("change", async (data) => {
@@ -110,10 +98,7 @@ export default class Vars {
           .then((c) => Vars.validateChannel(c, ChannelType.GuildText));
         delete Vars.roomMakingAnnounceData[channel.id];
         await FixedMessageRegister.cancelMessage(channel);
-      } else if (
-        data.operationType === "update" ||
-        data.operationType === "insert"
-      ) {
+      } else if (data.operationType === "update" || data.operationType === "insert") {
         const channel = await client.channels
           .fetch(data.fullDocument!.channelId)
           .then((c) => Vars.validateChannel(c, ChannelType.GuildText));

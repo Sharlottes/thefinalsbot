@@ -8,11 +8,7 @@ export interface AlertMessageOptions {
   footer?: [string, string];
 }
 export default class AlertMessageManager extends MessageManager<AlertMessageOptions>() {
-  public static override async createMessageData({
-    title,
-    description,
-    footer,
-  }: AlertMessageOptions) {
+  public static override async createMessageData({ title, description, footer }: AlertMessageOptions) {
     const messageData = await super.createMessageData({});
     messageData.embeds = [
       new Discord.EmbedBuilder()

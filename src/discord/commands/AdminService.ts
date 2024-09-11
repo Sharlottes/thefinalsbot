@@ -60,9 +60,9 @@ export default class AdminService {
     if (role) {
       await interaction.guild?.members.fetch();
     }
-    const targets = (
-      role ? Array.from(role.members.values()).filter((t) => !t.user.bot) : []
-    ) as Array<Discord.GuildMember | Discord.User>;
+    const targets = (role ? Array.from(role.members.values()).filter((t) => !t.user.bot) : []) as Array<
+      Discord.GuildMember | Discord.User
+    >;
     if (target) targets.push(target);
     const targetNames = targets.map((t) => t.displayName).join(", ");
 
@@ -99,20 +99,12 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
         new EmbedBuilder()
           .setColor(PColors.primary)
           .setTitle("메시지 확인")
-          .setDescription(
-            `정말로 아래 메시지를 ${bold(targetNames)}님에게 전송하시겠습니까?`,
-          ),
+          .setDescription(`정말로 아래 메시지를 ${bold(targetNames)}님에게 전송하시겠습니까?`),
       ],
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setCustomId("dm_confirm_button")
-            .setLabel("확인")
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId("dm_cancel_button")
-            .setLabel("취소")
-            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder().setCustomId("dm_confirm_button").setLabel("확인").setStyle(ButtonStyle.Success),
+          new ButtonBuilder().setCustomId("dm_cancel_button").setLabel("취소").setStyle(ButtonStyle.Danger),
         ),
       ],
     });
@@ -149,9 +141,7 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
         new EmbedBuilder()
           .setColor(PColors.primary)
           .setTitle(bold(targetNames) + "님에게 DM을 보냈습니다.")
-          .setDescription(
-            `내용\n----------------------\n${messageOptions.content}`,
-          )
+          .setDescription(`내용\n----------------------\n${messageOptions.content}`)
           .setAuthor({
             name: interaction.user.displayName,
             iconURL: interaction.user.displayAvatarURL(),
@@ -167,14 +157,13 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
               .setColor(PColors.primary)
               .setTitle("서버메신저")
               .setDescription(messageOptions.content)
-              .setFooter({ text: `id: ${logMessage.id}` }),
+              .setFooter({
+                text: `id: ${logMessage.id}`,
+              }),
           ],
           components: [
             new ActionRowBuilder<ButtonBuilder>().addComponents(
-              new ButtonBuilder()
-                .setCustomId("dm_check_button")
-                .setLabel("확인")
-                .setStyle(ButtonStyle.Success),
+              new ButtonBuilder().setCustomId("dm_check_button").setLabel("확인").setStyle(ButtonStyle.Success),
             ),
           ],
           files: messageOptions.files,
@@ -183,7 +172,9 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
     );
   }
 
-  @ButtonComponent({ id: "dm_check_button" })
+  @ButtonComponent({
+    id: "dm_check_button",
+  })
   async checkDMButton(interaction: Discord.ButtonInteraction) {
     if (!interaction.channel) {
       throw new Error("Channel not found");
@@ -197,12 +188,12 @@ DM 메시지를 보내려면 이 채널에 메시지를 보내주세요.
           new EmbedBuilder()
             .setColor(PColors.primary)
             .setTitle("확인됨")
-            .setDescription(
-              bold(interaction.user.displayName) + "님이 DM을 확인했습니다",
-            ),
+            .setDescription(bold(interaction.user.displayName) + "님이 DM을 확인했습니다"),
         ],
       }),
-      interaction.message.edit({ components: [] }),
+      interaction.message.edit({
+        components: [],
+      }),
       autoDeleteMessage(
         interaction.reply({
           content: "확인했습니다",

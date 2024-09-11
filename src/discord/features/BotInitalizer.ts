@@ -4,10 +4,7 @@ import { DIService, Discord, On, Once } from "discordx";
 @Discord()
 export default class BotInitalizer {
   @Once({ event: "ready" })
-  private async ready(
-    _: DiscordX.ArgsOf<"ready">,
-    client: DiscordX.Client,
-  ): Promise<void> {
+  private async ready(_: DiscordX.ArgsOf<"ready">, client: DiscordX.Client): Promise<void> {
     console.time("Initializing BotInitalizer...");
 
     DIService.engine.getAllServices();
@@ -20,32 +17,22 @@ export default class BotInitalizer {
       activities: [{ name: "/프로필 등록,확인", type: ActivityType.Custom }],
     });
 
-    console.log(
-      `Commands are all registered, total: ${client.applicationCommands.length}`,
-    );
+    console.log(`Commands are all registered, total: ${client.applicationCommands.length}`);
     console.log(`Bot ${client.user?.tag} ready`);
     console.timeEnd("Initializing BotInitalizer...");
   }
 
   @On({ event: "interactionCreate" })
-  private async interactionCreate(
-    [interaction]: DiscordX.ArgsOf<"interactionCreate">,
-    client: DiscordX.Client,
-  ) {
+  private async interactionCreate([interaction]: DiscordX.ArgsOf<"interactionCreate">, client: DiscordX.Client) {
     if (!client.user) {
-      throw new Error(
-        "client.user does not exist when interaction is created.",
-      );
+      throw new Error("client.user does not exist when interaction is created.");
     }
 
     client.executeInteraction(interaction);
   }
 
   @On({ event: "messageCreate" })
-  private async messageCreate(
-    [message]: DiscordX.ArgsOf<"messageCreate">,
-    client: DiscordX.Client,
-  ) {
+  private async messageCreate([message]: DiscordX.ArgsOf<"messageCreate">, client: DiscordX.Client) {
     if (!client.user) {
       throw new Error("client.user does not exist when message is created.");
     }

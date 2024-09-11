@@ -32,16 +32,12 @@ const userSchema = new Schema<UserData, UserModel, {}>(
   },
   {
     statics: {
-      async findUserByInteration(
-        interaction: Discord.ChatInputCommandInteraction,
-      ) {
+      async findUserByInteration(interaction: Discord.ChatInputCommandInteraction) {
         const user = await this.findOne({
           discordId: interaction.user.id,
         });
         if (!user) {
-          interaction.reply(
-            `가입 명령어로 계정을 인증해야 ${inlineCode("/프로필 등록")} 명령어를 사용할 수 있어요.`,
-          );
+          interaction.reply(`가입 명령어로 계정을 인증해야 ${inlineCode("/프로필 등록")} 명령어를 사용할 수 있어요.`);
           return;
         }
         return user;

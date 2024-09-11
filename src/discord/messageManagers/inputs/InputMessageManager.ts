@@ -1,22 +1,10 @@
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  Colors,
-  ComponentType,
-  EmbedBuilder,
-} from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Colors, ComponentType, EmbedBuilder } from "discord.js";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import Vars from "@/Vars";
 import { PrimitiveInputType, PrimitiveInputResolver } from "./InputResolvers";
-import MessageManager, {
-  MessageData,
-} from "@/discord/messageManagers/MessageManager";
+import MessageManager, { MessageData } from "@/discord/messageManagers/MessageManager";
 
-export interface InputOptions<
-  PT extends PrimitiveInputType,
-  T extends PTTypes,
-> {
+export interface InputOptions<PT extends PrimitiveInputType, T extends PTTypes> {
   // * for each text input
   textValidators?: {
     callback: (value: string) => boolean;
@@ -33,15 +21,14 @@ export interface InputOptions<
 }
 
 export type PTTypes = "primitive" | "array" | "object";
-type ResolvePT<
-  PT extends PrimitiveInputType,
-  T extends PTTypes,
-> = T extends "primitive" ? PT : T extends "array" ? PT[] : Record<string, PT>;
+type ResolvePT<PT extends PrimitiveInputType, T extends PTTypes> = T extends "primitive"
+  ? PT
+  : T extends "array"
+    ? PT[]
+    : Record<string, PT>;
 
 export default function InputMessageManager<T extends PTTypes>() {
-  return class InputMessageManager<
-    PT extends PrimitiveInputType,
-  > extends MessageManager<InputOptions<any, T>>() {
+  return class InputMessageManager<PT extends PrimitiveInputType> extends MessageManager<InputOptions<any, T>>() {
     public value?: ResolvePT<PT, T>;
     protected rCollector!: Discord.ReactionCollector;
     protected mCollector!: Discord.MessageCollector;
@@ -50,35 +37,24 @@ export default function InputMessageManager<T extends PTTypes>() {
     protected inputResolver!: PrimitiveInputResolver<PT>;
 
     public declare static createOnChannel: <PT extends PrimitiveInputType>(
-      sender: Parameters<
-        ReturnType<typeof MessageManager>["createOnChannel"]
-      >[0],
+      sender: Parameters<ReturnType<typeof MessageManager>["createOnChannel"]>[0],
       managerOptions: InputOptions<PT, T>,
-      options?: Parameters<
-        ReturnType<typeof MessageManager>["createOnChannel"]
-      >[2],
+      options?: Parameters<ReturnType<typeof MessageManager>["createOnChannel"]>[2],
     ) => Promise<InputMessageManager<PT>>;
 
     public declare static createOnInteraction: <PT extends PrimitiveInputType>(
-      sender: Parameters<
-        ReturnType<typeof MessageManager>["createOnInteraction"]
-      >[0],
+      sender: Parameters<ReturnType<typeof MessageManager>["createOnInteraction"]>[0],
       managerOptions: InputOptions<PT, T>,
-      options?: Parameters<
-        ReturnType<typeof MessageManager>["createOnInteraction"]
-      >[2],
+      options?: Parameters<ReturnType<typeof MessageManager>["createOnInteraction"]>[2],
     ) => Promise<InputMessageManager<PT>>;
 
-    protected static override async createMessageData<
-      PT extends PrimitiveInputType,
-    >(managerOptions: InputOptions<PT, T>) {
+    protected static override async createMessageData<PT extends PrimitiveInputType>(
+      managerOptions: InputOptions<PT, T>,
+    ) {
       const messageData = await super.createMessageData(managerOptions);
       messageData.components = [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setLabel("취소")
-            .setStyle(ButtonStyle.Danger)
-            .setCustomId("inputmessagemanager-cancel"),
+          new ButtonBuilder().setLabel("취소").setStyle(ButtonStyle.Danger).setCustomId("inputmessagemanager-cancel"),
         ),
       ];
       return messageData;
@@ -91,9 +67,7 @@ export default function InputMessageManager<T extends PTTypes>() {
       return "없음";
     }
 
-    protected static override async createManager<
-      PT extends PrimitiveInputType,
-    >(
+    protected static override async createManager<PT extends PrimitiveInputType>(
       message: Discord.Message,
       messageData: MessageData,
       options: InputOptions<PT, T>,
@@ -104,10 +78,7 @@ export default function InputMessageManager<T extends PTTypes>() {
     }
 
     public override async remove() {
-      await Promise.all([
-        this.message.delete(),
-        ...this.responsedMessages.map((m) => m.delete()),
-      ]);
+      await Promise.all([this.message.delete(), ...this.responsedMessages.map((m) => m.delete())]);
     }
 
     public async end() {
@@ -116,15 +87,11 @@ export default function InputMessageManager<T extends PTTypes>() {
       this.remove();
     }
 
-    protected async handleValue(
-      message: Discord.Message,
-      value: PT,
-    ): Promise<void> {}
+    protected async handleValue(message: Discord.Message, value: PT): Promise<void> {}
 
     protected setupCollectors() {
       this.rCollector = this.message.createReactionCollector({
-        filter: (reaction) =>
-          reaction.emoji.name === "👍" && reaction.count > 1,
+        filter: (reaction) => reaction.emoji.name === "👍" && reaction.count > 1,
       });
       this.mCollector = this.message.channel.createMessageCollector({
         filter: (message) => message.author.id !== Vars.client.user!.id,
@@ -135,10 +102,7 @@ export default function InputMessageManager<T extends PTTypes>() {
       return new Promise<void>((res) => {
         this.rCollector.on("collect", async () => {
           if (!this.value) {
-            autoDeleteMessage(
-              this.message.channel.send("에러: 입력된 값이 없습니다."),
-              1500,
-            );
+            autoDeleteMessage(this.message.channel.send("에러: 입력된 값이 없습니다."), 1500);
             return;
           }
           const isConfirmed = await this.askConfirm();
@@ -160,9 +124,7 @@ export default function InputMessageManager<T extends PTTypes>() {
           this.handleValue(message, value);
         });
         this.cCollector.on("collect", async (interaction) => {
-          autoDeleteMessage(
-            interaction.reply({ content: "취소되었습니다.", ephemeral: true }),
-          );
+          autoDeleteMessage(interaction.reply({ content: "취소되었습니다.", ephemeral: true }));
           this.end();
           res();
         });
@@ -174,29 +136,17 @@ export default function InputMessageManager<T extends PTTypes>() {
         content: `입력 완료: ${this.getValueString()}로 확정할까요?`,
         components: [
           new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder()
-              .setCustomId("input_yes")
-              .setLabel("예")
-              .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-              .setCustomId("input_no")
-              .setLabel("아니요")
-              .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId("input_yes").setLabel("예").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("input_no").setLabel("아니요").setStyle(ButtonStyle.Secondary),
           ),
         ],
       });
       const interaction = await msg.awaitMessageComponent();
       if (interaction.customId == "input_yes") {
-        await Promise.all([
-          autoDeleteMessage(interaction.reply("입력이 완료되었습니다."), 1500),
-          msg.delete(),
-        ]);
+        await Promise.all([autoDeleteMessage(interaction.reply("입력이 완료되었습니다."), 1500), msg.delete()]);
         return true;
       } else {
-        await Promise.all([
-          autoDeleteMessage(interaction.reply("입력이 취소되었습니다."), 1500),
-          msg.delete(),
-        ]);
+        await Promise.all([autoDeleteMessage(interaction.reply("입력이 취소되었습니다."), 1500), msg.delete()]);
         return false;
       }
     }
@@ -216,12 +166,7 @@ export default function InputMessageManager<T extends PTTypes>() {
       if (errmsg) {
         autoDeleteMessage(
           this.message.channel.send({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle("입력 오류")
-                .setDescription(errmsg)
-                .setColor(Colors.Red),
-            ],
+            embeds: [new EmbedBuilder().setTitle("입력 오류").setDescription(errmsg).setColor(Colors.Red)],
           }),
         );
         return false;

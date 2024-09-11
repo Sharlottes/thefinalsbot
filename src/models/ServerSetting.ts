@@ -29,8 +29,8 @@ export const ServerSettingSchema = new Schema<ServerSettingData>({
   channels: { type: ChannelsSchema, required: true },
 });
 
-const ServerSettingModel = mongoose.model<
-  ServerSettingData,
-  Model<ServerSettingData, {}, {}>
->("ServerSetting", ServerSettingSchema);
+const ServerSettingModel = mongoose.model<ServerSettingData, Model<ServerSettingData, {}, {}>>(
+  "ServerSetting",
+  ServerSettingSchema,
+);
 export default ServerSettingModel;

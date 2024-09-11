@@ -8,12 +8,8 @@ export abstract class PrimitiveInputResolver<PT extends PrimitiveInputType> {
   abstract getTypeString(): string;
   abstract getValueString(value: PT): string;
   // * can fail to resolve or takes time to resolve
-  abstract resolveInput(
-    msg: Discord.Message,
-  ): MaybePromise<PT | null | undefined>;
-  getValidate(): NonNullable<
-    InputOptions<keyof PrimitiveInputTypeMap, PTTypes>["textValidators"]
-  >[number] {
+  abstract resolveInput(msg: Discord.Message): MaybePromise<PT | null | undefined>;
+  getValidate(): NonNullable<InputOptions<keyof PrimitiveInputTypeMap, PTTypes>["textValidators"]>[number] {
     return { callback: () => true, invalidMessage: "" };
   }
 }
@@ -55,14 +51,10 @@ export class ChannelInputResolver extends PrimitiveInputResolver<Discord.Channel
     return await Vars.mainGuild.channels.fetch(channelId);
   }
 
-  override getValidate(): NonNullable<
-    InputOptions<Discord.Channel, PTTypes>["textValidators"]
-  >[number] {
+  override getValidate(): NonNullable<InputOptions<Discord.Channel, PTTypes>["textValidators"]>[number] {
     return {
-      callback: (value) =>
-        /^<#\d{17,19}>$/.test(value) || /^\d{17,19}$/.test(value),
-      invalidMessage:
-        "입력값은 17자리 또는 19자리 숫자인 채널 ID거나 채녈 멘션이여야 합니다.",
+      callback: (value) => /^<#\d{17,19}>$/.test(value) || /^\d{17,19}$/.test(value),
+      invalidMessage: "입력값은 17자리 또는 19자리 숫자인 채널 ID거나 채녈 멘션이여야 합니다.",
     };
   }
 }
@@ -83,9 +75,7 @@ export class CategoryInputResolver extends PrimitiveInputResolver<Discord.Catego
   override async resolveInput(msg: Discord.Message) {
     const categoryId = msg.mentions.channels.firstKey() ?? msg.content;
     if (!categoryId || !/^\d{17,19}$/.test(categoryId)) return null;
-    return (await Vars.mainGuild.channels.fetch(
-      categoryId,
-    )) as Discord.CategoryChannel;
+    return (await Vars.mainGuild.channels.fetch(categoryId)) as Discord.CategoryChannel;
   }
 }
 
@@ -110,19 +100,10 @@ export class GuildPreviewInputResolver extends PrimitiveInputResolver<Discord.Gu
   }
 }
 
-export type PrimitiveInputTypes<PT extends PrimitiveInputType> =
-  | PT
-  | Record<string, PT>
-  | PT[];
-export type PrimitiveInputType =
-  | string
-  | Discord.Channel
-  | Discord.CategoryChannel
-  | Discord.GuildPreview;
+export type PrimitiveInputTypes<PT extends PrimitiveInputType> = PT | Record<string, PT> | PT[];
+export type PrimitiveInputType = string | Discord.Channel | Discord.CategoryChannel | Discord.GuildPreview;
 export type PrimitiveInputTypeMap = {
-  [P in keyof typeof InputResolvers]: Parameters<
-    (typeof InputResolvers)[P]["getValueString"]
-  >[0];
+  [P in keyof typeof InputResolvers]: Parameters<(typeof InputResolvers)[P]["getValueString"]>[0];
 };
 export const InputResolvers = {
   text: new TextInputResolver(),

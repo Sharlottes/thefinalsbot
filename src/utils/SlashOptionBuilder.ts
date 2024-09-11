@@ -9,10 +9,7 @@ type OptionValueMap = {
   [ApplicationCommandOptionType.User]: Discord.User;
   [ApplicationCommandOptionType.Channel]: Discord.GuildBasedChannel;
   [ApplicationCommandOptionType.Role]: Discord.Role;
-  [ApplicationCommandOptionType.Mentionable]:
-    | Discord.GuildMember
-    | Discord.User
-    | Discord.Role;
+  [ApplicationCommandOptionType.Mentionable]: Discord.GuildMember | Discord.User | Discord.Role;
   [ApplicationCommandOptionType.Number]: number;
   [ApplicationCommandOptionType.Attachment]: Discord.Attachment;
 };
@@ -23,36 +20,21 @@ export default class SlashOptionBuilder<T extends string, TD extends string> {
     TD extends string,
     OT extends Exclude<
       ApplicationCommandOptionType,
-      | ApplicationCommandOptionType.Subcommand
-      | ApplicationCommandOptionType.SubcommandGroup
+      ApplicationCommandOptionType.Subcommand | ApplicationCommandOptionType.SubcommandGroup
     >,
   >(
-    options: Omit<
-      DiscordX.SlashOptionOptions<
-        DiscordX.VerifyName<T>,
-        DiscordX.NotEmpty<TD>
-      >,
-      "type" | "required"
-    > & {
+    options: Omit<DiscordX.SlashOptionOptions<DiscordX.VerifyName<T>, DiscordX.NotEmpty<TD>>, "type" | "required"> & {
       type: OT;
       validators?: Array<
         [
           validator: (
-            value:
-              | ((typeof options)["required"] extends false ? null : never)
-              | OptionValueMap[OT],
+            value: ((typeof options)["required"] extends false ? null : never) | OptionValueMap[OT],
           ) => boolean,
           error: string,
         ]
       >;
-    } & (
-        | { required: true }
-        | { required?: false; default?: OptionValueMap[OT] }
-      ),
-  ): DiscordX.SlashOptionOptions<
-    DiscordX.VerifyName<T>,
-    DiscordX.NotEmpty<TD>
-  > {
+    } & ({ required: true } | { required?: false; default?: OptionValueMap[OT] }),
+  ): DiscordX.SlashOptionOptions<DiscordX.VerifyName<T>, DiscordX.NotEmpty<TD>> {
     options.transformer = async (
       value: OptionValueMap[OT],
       interaction: Discord.ChatInputCommandInteraction,

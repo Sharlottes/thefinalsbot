@@ -10,14 +10,10 @@ interface VoiceChannelData {
 
 @Discord()
 export default class VoiceChannelManager {
-  private static readonly voiceChannels: Map<string, VoiceChannelData> =
-    new Map();
+  private static readonly voiceChannels: Map<string, VoiceChannelData> = new Map();
 
   @On({ event: "voiceStateUpdate" })
-  async onVoiceStateUpdate([
-    oldState,
-    newState,
-  ]: DiscordX.ArgsOf<"voiceStateUpdate">) {
+  async onVoiceStateUpdate([oldState, newState]: DiscordX.ArgsOf<"voiceStateUpdate">) {
     this.validateChannel(oldState.channel);
     this.validateChannel(newState.channel);
   }
@@ -31,10 +27,7 @@ export default class VoiceChannelManager {
     clearTimeout(data.latestBlankTimer);
     if (channel.members.size !== 0) return;
 
-    data.latestBlankTimer = setTimeout(
-      () => VoiceChannelManager.handleChannelTimeout(data),
-      data.removeTime,
-    );
+    data.latestBlankTimer = setTimeout(() => VoiceChannelManager.handleChannelTimeout(data), data.removeTime);
   }
 
   private static handleChannelTimeout(data: VoiceChannelData) {
@@ -44,11 +37,7 @@ export default class VoiceChannelManager {
 
   public static async createVoiceChannel(
     name: string,
-    {
-      removeTime = 1000 * 7,
-      parent = Vars.matchMakingCategory,
-      owner,
-    }: CreateVoiceChannelOptions = {
+    { removeTime = 1000 * 7, parent = Vars.matchMakingCategory, owner }: CreateVoiceChannelOptions = {
       removeTime: 1000 * 7,
       parent: Vars.matchMakingCategory,
     },
@@ -61,10 +50,7 @@ export default class VoiceChannelManager {
     const data: VoiceChannelData = {
       channel,
       removeTime,
-      latestBlankTimer: setTimeout(
-        () => this.handleChannelTimeout(data),
-        removeTime,
-      ),
+      latestBlankTimer: setTimeout(() => this.handleChannelTimeout(data), removeTime),
     };
     if (owner) {
       channel.permissionOverwrites.create(owner.id, {

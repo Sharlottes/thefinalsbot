@@ -38,25 +38,16 @@ export default class RoomsMakerHandler {
   }
 
   @ButtonComponent({ id: /show_voice_channel_invite-.*/ })
-  private async showVoiceChannelInvite(
-    interaction: Discord.ButtonInteraction<"cached">,
-  ) {
-    const channel =
-      await RoomsMakerService.main.getUserVoiceChannel(interaction);
+  private async showVoiceChannelInvite(interaction: Discord.ButtonInteraction<"cached">) {
+    const channel = await RoomsMakerService.main.getUserVoiceChannel(interaction);
     if (!channel) {
-      RoomsMakerService.main.sendErrorMessage(
-        interaction,
-        "음성방에 입장해 주세요.",
-      );
+      RoomsMakerService.main.sendErrorMessage(interaction, "음성방에 입장해 주세요.");
       return null;
     }
 
     const data = RoomsMakerService.main.findDataByChannelId(channel.id);
     if (!data) {
-      RoomsMakerService.main.sendErrorMessage(
-        interaction,
-        "등록되지 않은 방입니다.",
-      );
+      RoomsMakerService.main.sendErrorMessage(interaction, "등록되지 않은 방입니다.");
       return;
     }
 
@@ -70,44 +61,28 @@ ${data.name} LFG에서 사용해주세요.`,
       return;
     }
 
-    autoDeleteMessage(
-      interaction.reply({ content: inlineCode(channel.url), ephemeral: true }),
-    );
-    const message = await interaction.channel!.send(
-      `${userMention(interaction.user.id)} ${channel.url}`,
-    );
+    autoDeleteMessage(interaction.reply({ content: inlineCode(channel.url), ephemeral: true }));
+    const message = await interaction.channel!.send(`${userMention(interaction.user.id)} ${channel.url}`);
     data.messages.get(channel.id)?.push(message);
   }
 
   @ButtonComponent({ id: /change_voice_channel-.*/ })
   async changeVoiceChannel(interaction: Discord.ButtonInteraction<"cached">) {
-    const channel =
-      await RoomsMakerService.main.getUserVoiceChannel(interaction);
+    const channel = await RoomsMakerService.main.getUserVoiceChannel(interaction);
     if (!channel) {
-      RoomsMakerService.main.sendErrorMessage(
-        interaction,
-        "음성방에 입장해 주세요.",
-      );
+      RoomsMakerService.main.sendErrorMessage(interaction, "음성방에 입장해 주세요.");
       return null;
     }
 
     const data = RoomsMakerService.main.findDataByChannelId(channel.id);
     if (!data) {
-      RoomsMakerService.main.sendErrorMessage(
-        interaction,
-        "등록되지 않은 방입니다.",
-      );
+      RoomsMakerService.main.sendErrorMessage(interaction, "등록되지 않은 방입니다.");
       return;
     }
 
-    const canManage = channel
-      .permissionsFor(interaction.user)
-      ?.has(PermissionFlagsBits.ManageChannels);
+    const canManage = channel.permissionsFor(interaction.user)?.has(PermissionFlagsBits.ManageChannels);
     if (!canManage) {
-      RoomsMakerService.main.sendErrorMessage(
-        interaction,
-        "방을 관리할 권한이 없습니다.",
-      );
+      RoomsMakerService.main.sendErrorMessage(interaction, "방을 관리할 권한이 없습니다.");
       return;
     }
 
@@ -138,29 +113,19 @@ ${data.name} LFG에서 사용해주세요.`,
 
   @ModalComponent({ id: /room-change-modal-.*/ })
   async changeVoiceChannelModal(interaction: Discord.ModalSubmitInteraction) {
-    const channel =
-      await RoomsMakerService.main.getUserVoiceChannel(interaction);
+    const channel = await RoomsMakerService.main.getUserVoiceChannel(interaction);
     if (!channel) {
-      RoomsMakerService.main.sendErrorMessage(
-        interaction,
-        "음성방에 입장해 주세요.",
-      );
+      RoomsMakerService.main.sendErrorMessage(interaction, "음성방에 입장해 주세요.");
       return null;
     }
-    const [capacity, name] = ["capacity", "name"].map((n) =>
-      interaction.fields.getTextInputValue(n),
-    );
+    const [capacity, name] = ["capacity", "name"].map((n) => interaction.fields.getTextInputValue(n));
     if (Number.isNaN(+capacity) || +capacity < 0) {
-      RoomsMakerService.main.sendErrorMessage(
-        interaction,
-        "자연수만 가능합니다.",
-      );
+      RoomsMakerService.main.sendErrorMessage(interaction, "자연수만 가능합니다.");
       return;
     }
 
     const promises: Promise<unknown>[] = [];
-    if (channel.userLimit !== +capacity)
-      promises.push(channel.setUserLimit(+capacity));
+    if (channel.userLimit !== +capacity) promises.push(channel.setUserLimit(+capacity));
     if (channel.name !== name) promises.push(channel.setName(name));
     await Promise.all(promises);
     autoDeleteMessage(

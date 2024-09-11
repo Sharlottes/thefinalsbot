@@ -16,8 +16,5 @@ const fixedMessageSchema = new Schema<FixedMessageData, FixedMessageModel, {}>({
   channels: { type: [String], required: true, unique: true },
 });
 
-const FixedMessageModel = mongoose.model<FixedMessageData, FixedMessageModel>(
-  "FixedMessage",
-  fixedMessageSchema,
-);
+const FixedMessageModel = mongoose.model<FixedMessageData, FixedMessageModel>("FixedMessage", fixedMessageSchema);
 export default FixedMessageModel;

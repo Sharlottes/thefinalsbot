@@ -2,30 +2,9 @@ import ServerSettingManager from "@/core/ServerSettingManager";
 import ServerSettingModel from "@/models/ServerSetting";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import { PermissionGuard } from "@discordx/utilities";
-import {
-  Discord,
-  Guard,
-  Slash,
-  SlashChoice,
-  SlashGroup,
-  SlashOption,
-} from "discordx";
+import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import MasterGuard from "../guards/MasterGuard";
-import {
-  ApplicationCommandOptionType,
-  channelMention,
-  ChannelType,
-  EmbedBuilder,
-} from "discord.js";
-import ErrorMessageManager from "../messageManagers/ErrorMessageManager";
-import Vars from "@/Vars";
-import PrimitiveInputMessageManager from "../messageManagers/inputs/PrimitiveInputMessageManager";
-import {
-  InputResolvers,
-  TextInputResolver,
-} from "../messageManagers/inputs/InputResolvers";
-import RoomMakingDataModel from "@/models/RoomMakingDataModel";
-import RoomsMakerService from "../features/roommake/RoomsMakerService";
+import { ApplicationCommandOptionType } from "discord.js";
 import ServerSettingService from "./ServerSettingService";
 import SlashOptionBuilder from "@/utils/SlashOptionBuilder";
 
@@ -126,10 +105,7 @@ export default class ServerSettingHandler {
     channel: Discord.TextChannel | null,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
-    ServerSettingService.main.removeRoomMaker(
-      interaction,
-      channel ?? undefined,
-    );
+    ServerSettingService.main.removeRoomMaker(interaction, channel ?? undefined);
   }
 
   @SlashGroup("방생성", "서버설정")

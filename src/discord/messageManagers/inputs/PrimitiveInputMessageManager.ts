@@ -24,9 +24,9 @@ export default class PrimitiveInputMessageManager<
     return manager;
   }
 
-  protected static override async createMessageData<
-    PT extends PrimitiveInputType,
-  >(managerOptions: InputOptions<PT, "primitive">): Promise<any> {
+  protected static override async createMessageData<PT extends PrimitiveInputType>(
+    managerOptions: InputOptions<PT, "primitive">,
+  ): Promise<any> {
     const messageData = await super.createMessageData(managerOptions);
     messageData.content = `입력 대기중...
 * 입력을 위한 ${managerOptions.inputResolver.getTypeString()} 메시지를 보내주세요.
@@ -43,10 +43,7 @@ export default class PrimitiveInputMessageManager<
   }
 
   public override getValueString(): string {
-    return PrimitiveInputMessageManager.getValueString(
-      this.value,
-      this.inputResolver,
-    );
+    return PrimitiveInputMessageManager.getValueString(this.value, this.inputResolver);
   }
 
   protected override async handleValue(message: Discord.Message, value: PT) {
@@ -84,9 +81,7 @@ export default class PrimitiveInputMessageManager<
         res();
       });
       this.cCollector.on("collect", async (interaction) => {
-        autoDeleteMessage(
-          interaction.reply({ content: "취소되었습니다.", ephemeral: true }),
-        );
+        autoDeleteMessage(interaction.reply({ content: "취소되었습니다.", ephemeral: true }));
         this.end();
         res();
       });

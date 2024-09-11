@@ -1,8 +1,4 @@
-import Discord, {
-  ActionRowBuilder,
-  ButtonStyle,
-  EmbedBuilder,
-} from "discord.js";
+import Discord, { ActionRowBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
 import MessageManager, { MessageData } from "./MessageManager";
 import ButtonComponent from "../components/ButtonComponent";
 import ignoreInteraction from "../../utils/ignoreInteraction";
@@ -31,9 +27,7 @@ export default class KeypadMessageManager extends MessageManager<KeypadMessageOp
     manager.min = options.min;
     manager.max = options.max;
     manager.callback = options.callback;
-    manager.mainEmbed = new EmbedBuilder().setFields([
-      { name: "Amount", value: manager.amount.toString() },
-    ]);
+    manager.mainEmbed = new EmbedBuilder().setFields([{ name: "Amount", value: manager.amount.toString() }]);
     manager.messageData.embeds = [manager.mainEmbed];
     let stack = 0;
     for (let i = 1; i <= 3; i++) {
@@ -42,16 +36,11 @@ export default class KeypadMessageManager extends MessageManager<KeypadMessageOp
         stack++;
         let sstack = stack;
         row.addComponents(
-          ButtonComponent.create(
-            { label: sstack.toString() },
-            async (interaction) => {
-              ignoreInteraction(interaction);
-              manager.amount = await manager.validate(
-                manager.amount * 10 + sstack,
-              );
-              manager.updateEmbed();
-            },
-          ),
+          ButtonComponent.create({ label: sstack.toString() }, async (interaction) => {
+            ignoreInteraction(interaction);
+            manager.amount = await manager.validate(manager.amount * 10 + sstack);
+            manager.updateEmbed();
+          }),
         );
       }
       manager.messageData.components.push(row);
@@ -64,51 +53,34 @@ export default class KeypadMessageManager extends MessageManager<KeypadMessageOp
           manager.amount *= 10;
           manager.updateEmbed();
         }),
-        ButtonComponent.create(
-          { label: "del", style: ButtonStyle.Danger },
-          async (interaction) => {
-            ignoreInteraction(interaction);
-            manager.amount = await manager.validate(
-              Math.floor(manager.amount / 10),
-            );
-            manager.updateEmbed();
-          },
-        ),
-        ButtonComponent.create(
-          { label: "done", style: ButtonStyle.Success },
-          (interaction) => {
-            ignoreInteraction(interaction);
-            manager.callback(manager.amount);
-            manager.remove();
-          },
-        ),
+        ButtonComponent.create({ label: "del", style: ButtonStyle.Danger }, async (interaction) => {
+          ignoreInteraction(interaction);
+          manager.amount = await manager.validate(Math.floor(manager.amount / 10));
+          manager.updateEmbed();
+        }),
+        ButtonComponent.create({ label: "done", style: ButtonStyle.Success }, (interaction) => {
+          ignoreInteraction(interaction);
+          manager.callback(manager.amount);
+          manager.remove();
+        }),
       ),
       new ActionRowBuilder<ButtonComponent>().addComponents(
-        ButtonComponent.create(
-          { label: "cancel", style: ButtonStyle.Secondary },
-          (interaction) => {
-            ignoreInteraction(interaction);
-            manager.remove();
-          },
-        ),
-        ButtonComponent.create(
-          { label: "reset", style: ButtonStyle.Secondary },
-          (interaction) => {
-            ignoreInteraction(interaction);
-            manager.amount = Math.min(0, manager.min ?? 0);
-            manager.updateEmbed();
-          },
-        ),
+        ButtonComponent.create({ label: "cancel", style: ButtonStyle.Secondary }, (interaction) => {
+          ignoreInteraction(interaction);
+          manager.remove();
+        }),
+        ButtonComponent.create({ label: "reset", style: ButtonStyle.Secondary }, (interaction) => {
+          ignoreInteraction(interaction);
+          manager.amount = Math.min(0, manager.min ?? 0);
+          manager.updateEmbed();
+        }),
         ...(manager.max !== undefined
           ? [
-              ButtonComponent.create(
-                { label: "max", style: ButtonStyle.Secondary },
-                (interaction) => {
-                  ignoreInteraction(interaction);
-                  manager.amount = manager.max!;
-                  manager.updateEmbed();
-                },
-              ),
+              ButtonComponent.create({ label: "max", style: ButtonStyle.Secondary }, (interaction) => {
+                ignoreInteraction(interaction);
+                manager.amount = manager.max!;
+                manager.updateEmbed();
+              }),
             ]
           : []),
       ),

@@ -12,18 +12,14 @@ interface RoomMakingDataModel extends Model<RoomMakingDataData, {}, {}> {
     interaction: Discord.ChatInputCommandInteraction,
   ): Promise<HydratedDocument<RoomMakingDataData, {}> | undefined>;
 }
-const roomMakingDataSchema = new Schema<
-  RoomMakingDataData,
-  RoomMakingDataModel,
-  {}
->({
+const roomMakingDataSchema = new Schema<RoomMakingDataData, RoomMakingDataModel, {}>({
   channelId: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   description: { type: String, required: true },
 });
 
-const RoomMakingDataModel = mongoose.model<
-  RoomMakingDataData,
-  RoomMakingDataModel
->("RoomMakingData", roomMakingDataSchema);
+const RoomMakingDataModel = mongoose.model<RoomMakingDataData, RoomMakingDataModel>(
+  "RoomMakingData",
+  roomMakingDataSchema,
+);
 export default RoomMakingDataModel;

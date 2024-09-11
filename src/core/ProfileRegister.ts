@@ -1,11 +1,4 @@
-import {
-  ActionRowBuilder,
-  Colors,
-  EmbedBuilder,
-  StringSelectMenuBuilder,
-  bold,
-  italic,
-} from "discord.js";
+import { ActionRowBuilder, Colors, EmbedBuilder, StringSelectMenuBuilder, bold, italic } from "discord.js";
 import throwInteraction from "@/utils/throwInteraction";
 import { contentDataset } from "@/constants/contentDataset";
 import UserModel from "@/models/UserModel";
@@ -91,11 +84,7 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
           ),
       ],
       components: createComponents(
-        [
-          "#text_input.Secondary|닉네임과 클랜명 입력하기",
-          "#submit.Success|확인",
-          "#cancel.Danger|취소",
-        ],
+        ["#text_input.Secondary|닉네임과 클랜명 입력하기", "#submit.Success|확인", "#cancel.Danger|취소"],
         new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
           new StringSelectMenuBuilder()
             .setCustomId("position")
@@ -118,14 +107,10 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
             .setPlaceholder(this.profile.ability ?? "주특기를 선택해주세요")
             .addOptions(
               this.profile.position
-                ? contentDataset[this.profile.position].abilities.map(
-                    (ability) => ({
-                      label:
-                        ability +
-                        (this.profile.ability == ability ? " ✅" : ""),
-                      value: ability,
-                    }),
-                  )
+                ? contentDataset[this.profile.position].abilities.map((ability) => ({
+                    label: ability + (this.profile.ability == ability ? " ✅" : ""),
+                    value: ability,
+                  }))
                 : [{ label: "비어있음", value: "선택되지 않음" }],
             ),
         ),
@@ -135,32 +120,23 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
             .setPlaceholder(this.profile.weapon ?? "무기를 선택해주세요")
             .addOptions(
               this.profile.position
-                ? contentDataset[this.profile.position].weapons.map(
-                    (weapon) => ({
-                      label:
-                        weapon + (this.profile.weapon == weapon ? " ✅" : ""),
-                      value: weapon,
-                    }),
-                  )
+                ? contentDataset[this.profile.position].weapons.map((weapon) => ({
+                    label: weapon + (this.profile.weapon == weapon ? " ✅" : ""),
+                    value: weapon,
+                  }))
                 : [{ label: "비어있음", value: "선택되지 않음" }],
             ),
         ),
         new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
           new StringSelectMenuBuilder()
             .setCustomId("gadget")
-            .setPlaceholder(
-              this.profile.gadget.join(", ") || "가젯을 선택해주세요",
-            )
+            .setPlaceholder(this.profile.gadget.join(", ") || "가젯을 선택해주세요")
             .addOptions(
               this.profile.position
-                ? contentDataset[this.profile.position].gadgets.map(
-                    (gadget) => ({
-                      label:
-                        gadget +
-                        (this.profile.gadget.includes(gadget) ? " ✅" : ""),
-                      value: gadget,
-                    }),
-                  )
+                ? contentDataset[this.profile.position].gadgets.map((gadget) => ({
+                    label: gadget + (this.profile.gadget.includes(gadget) ? " ✅" : ""),
+                    value: gadget,
+                  }))
                 : [{ label: "비어있음", value: "선택되지 않음" }],
             ),
         ),
@@ -176,24 +152,14 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
         case "position":
           const newPosition = interaction.values[0];
           if (this.profile.position !== newPosition) {
-            if (
-              !contentDataset[newPosition].abilities.includes(
-                this.profile.ability ?? "",
-              )
-            ) {
+            if (!contentDataset[newPosition].abilities.includes(this.profile.ability ?? "")) {
               this.profile.ability = undefined;
             }
-            if (
-              !contentDataset[newPosition].weapons.includes(
-                this.profile.weapon ?? "",
-              )
-            ) {
+            if (!contentDataset[newPosition].weapons.includes(this.profile.weapon ?? "")) {
               this.profile.weapon = undefined;
             }
 
-            this.profile.gadget.filter((g) =>
-              contentDataset[newPosition].gadgets.includes(g),
-            );
+            this.profile.gadget.filter((g) => contentDataset[newPosition].gadgets.includes(g));
           }
 
           this.profile.position = interaction.values[0];
@@ -207,9 +173,7 @@ ${italic("프로필 등록은 다시할 수 있습니다.")}
         case "gadget":
           const value = interaction.values[0];
           if (this.profile.gadget.includes(value)) {
-            this.profile.gadget = this.profile.gadget.filter(
-              (g) => g !== value,
-            );
+            this.profile.gadget = this.profile.gadget.filter((g) => g !== value);
           } else if (this.profile.gadget.length < 3) {
             this.profile.gadget.push(value);
           } else {

@@ -2,9 +2,7 @@ import Vars from "@/Vars";
 import { NotBot } from "@discordx/utilities";
 import Discord from "discord.js";
 
-const MasterGuard: DiscordX.GuardFunction<
-  Parameters<typeof NotBot>[0]
-> = async (arg, client, next) => {
+const MasterGuard: DiscordX.GuardFunction<Parameters<typeof NotBot>[0]> = async (arg, client, next) => {
   const argObj = arg instanceof Array ? arg[0] : arg;
 
   const user =

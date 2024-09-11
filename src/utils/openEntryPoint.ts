@@ -3,9 +3,7 @@ import { readdir } from "fs";
 import path from "path";
 
 export default async function openEntryPoint(dir = "command") {
-  const files = await promisify(readdir)(
-    path.resolve(process.cwd(), "dist", dir),
-  );
+  const files = await promisify(readdir)(path.resolve(process.cwd(), "dist", dir));
   await Promise.all(
     files
       .filter((n) => !n.endsWith(".js.map"))

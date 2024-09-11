@@ -4,10 +4,7 @@ import { Discord, On } from "discordx";
 @Discord()
 export default class InviteLinkRemover {
   @On({ event: "messageCreate" })
-  private async messageCreate(
-    [message]: DiscordX.ArgsOf<"messageCreate">,
-    client: DiscordX.Client,
-  ) {
+  private async messageCreate([message]: DiscordX.ArgsOf<"messageCreate">, client: DiscordX.Client) {
     const matchArr = message.content.match(/discord.gg\/([A-Za-z0-9]+)/);
     if (!matchArr) return;
     const inviteCode = matchArr[1];

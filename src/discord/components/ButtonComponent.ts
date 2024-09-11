@@ -8,17 +8,11 @@ export interface ButtonComponentOptions {
 /**
  * 헨들러의 옵저빙과 customId / label 명명을 추상화한 ButtonBuilder 파생 클래스
  */
-export default class ButtonComponent
-  extends ButtonBuilder
-  implements Interactive<"button">
-{
+export default class ButtonComponent extends ButtonBuilder implements Interactive<"button"> {
   private readonly onClick: (interaction: Discord.ButtonInteraction) => unknown;
   private readonly options: ButtonComponentOptions;
 
-  constructor(
-    data: Partial<Discord.InteractionButtonComponentData> &
-      ButtonComponentOptions,
-  ) {
+  constructor(data: Partial<Discord.InteractionButtonComponentData> & ButtonComponentOptions) {
     super({ ...data });
     this.options = data;
 
@@ -46,10 +40,7 @@ export default class ButtonComponent
       onClick: callback,
       ...options,
       style: options.style ?? ButtonStyle.Primary,
-      customId:
-        (options.label?.replaceAll(/\s/g, "-") || "") +
-        (options.emoji?.toString() || "") +
-        options.customId!,
+      customId: (options.label?.replaceAll(/\s/g, "-") || "") + (options.emoji?.toString() || "") + options.customId!,
     });
   }
 }

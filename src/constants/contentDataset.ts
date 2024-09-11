@@ -1,18 +1,7 @@
 export const contentDataset = {
   light: {
     abilities: ["쇠갈고리", "은폐 장치", "회피 돌진"],
-    weapons: [
-      "93R",
-      "검",
-      "단검",
-      "비도",
-      "LH1",
-      "M11",
-      "SH1900",
-      "SR-84",
-      "V95",
-      "XP-54",
-    ],
+    weapons: ["93R", "검", "단검", "비도", "LH1", "M11", "SH1900", "SR-84", "V95", "XP-54"],
     gadgets: [
       "가스 수류탄",
       "게이트웨이",
@@ -32,15 +21,7 @@ export const contentDataset = {
   },
   middle: {
     abilities: ["비물질화 도구", "수호 포탑", "치유 광선"],
-    weapons: [
-      "모델 1887",
-      "진압 방패",
-      "AKM",
-      "CL-40",
-      "FAMAS",
-      "FCAR",
-      "R .357",
-    ],
+    weapons: ["모델 1887", "진압 방패", "AKM", "CL-40", "FAMAS", "FCAR", "R .357"],
     gadgets: [
       "가스 수류탄",
       "가스 지뢰",
@@ -59,15 +40,7 @@ export const contentDataset = {
   },
   heavy: {
     abilities: ["메시 실드", "점액질 총", "차지 앤 슬램"],
-    weapons: [
-      "루이스 건",
-      "슬레지 해머",
-      "화염방사기",
-      "KS-23",
-      "M60",
-      "MGL32",
-      "SA1216",
-    ],
+    weapons: ["루이스 건", "슬레지 해머", "화염방사기", "KS-23", "M60", "MGL32", "SA1216"],
     gadgets: [
       "가스 수류탄",
       "돔형 방패",

@@ -20,11 +20,7 @@ export default function MessageManager<OT = unknown>() {
       public readonly options: OT,
     ) {}
 
-    protected static async createManager(
-      message: Discord.Message,
-      messageData: MessageData,
-      options: OT,
-    ) {
+    protected static async createManager(message: Discord.Message, messageData: MessageData, options: OT) {
       return new this(message, messageData, options);
     }
 
@@ -34,10 +30,7 @@ export default function MessageManager<OT = unknown>() {
       managerOptions: OT,
       options?: Omit<Discord.MessageCreateOptions, keyof MessageData>,
     ): Promise<InstanceType<typeof MessageManager>> {
-      const messageData = Object.assign(
-        await this.createMessageData(managerOptions),
-        options,
-      );
+      const messageData = Object.assign(await this.createMessageData(managerOptions), options);
       const isEmpty = this.isDataEmpty(messageData);
       if (isEmpty) {
         messageData.content = "\u200b";
@@ -52,10 +45,7 @@ export default function MessageManager<OT = unknown>() {
       managerOptions: OT,
       options?: Omit<Discord.InteractionReplyOptions, keyof MessageData>,
     ): Promise<InstanceType<typeof MessageManager>> {
-      const messageData = Object.assign(
-        await this.createMessageData(managerOptions),
-        options,
-      );
+      const messageData = Object.assign(await this.createMessageData(managerOptions), options);
       const isEmpty = this.isDataEmpty(messageData);
       if (isEmpty) {
         messageData.content = "\u200b";
@@ -72,9 +62,7 @@ export default function MessageManager<OT = unknown>() {
       return this.createManager(message, messageData, managerOptions);
     }
 
-    protected static async createMessageData(
-      managerOptions: OT,
-    ): Promise<MessageData & OT> {
+    protected static async createMessageData(managerOptions: OT): Promise<MessageData & OT> {
       return Object.create(emptyMessageData);
     }
 
@@ -89,8 +77,7 @@ export default function MessageManager<OT = unknown>() {
     }
 
     public async update() {
-      if (!this.message)
-        throw new Error("보내지지 않은 메시지는 업데이트할 수 없습니다!");
+      if (!this.message) throw new Error("보내지지 않은 메시지는 업데이트할 수 없습니다!");
       return await this.message.edit({
         content: this.messageData.content,
         embeds: this.messageData.embeds,
@@ -98,16 +85,12 @@ export default function MessageManager<OT = unknown>() {
         allowedMentions: this.messageData.allowedMentions,
         files: this.messageData.files,
         // ! 생략 시 전체 유지 -> 기존 파일이 this.messageData.files로 "변경"되는게 아니라 "추가"됨. 이를 방지하기 위해 undefined로 설정
-        attachments:
-          this.messageData.attachments.length > 0
-            ? this.messageData.attachments
-            : undefined,
+        attachments: this.messageData.attachments.length > 0 ? this.messageData.attachments : undefined,
       });
     }
 
     public async remove() {
-      if (!this.message)
-        throw new Error("보내지지 않은 메시지는 삭제할 수 없습니다!");
+      if (!this.message) throw new Error("보내지지 않은 메시지는 삭제할 수 없습니다!");
       await this.message.delete();
     }
   };

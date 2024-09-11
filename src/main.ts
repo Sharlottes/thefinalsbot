@@ -15,22 +15,13 @@ import ServerSettingManager from "./core/ServerSettingManager";
 
 process
   .on("unhandledRejection", (err) => {
-    console.error(
-      `[${new Date().toISOString()}] Unhandled Promise Rejection:\n`,
-      err,
-    );
+    console.error(`[${new Date().toISOString()}] Unhandled Promise Rejection:\n`, err);
   })
   .on("uncaughtException", (err) => {
-    console.error(
-      `[${new Date().toISOString()}] Uncaught Promise Exception:\n`,
-      err,
-    );
+    console.error(`[${new Date().toISOString()}] Uncaught Promise Exception:\n`, err);
   })
   .on("uncaughtExceptionMonitor", (err) => {
-    console.error(
-      `[${new Date().toISOString()}] Uncaught Promise Exception (Monitor):\n`,
-      err,
-    );
+    console.error(`[${new Date().toISOString()}] Uncaught Promise Exception (Monitor):\n`, err);
   });
 dotenv.config();
 
@@ -46,11 +37,7 @@ export const client = new Client({
     Discord.GatewayIntentBits.GuildMessageReactions,
     Discord.GatewayIntentBits.GuildVoiceStates,
   ],
-  partials: [
-    Discord.Partials.Message,
-    Discord.Partials.Channel,
-    Discord.Partials.Reaction,
-  ],
+  partials: [Discord.Partials.Message, Discord.Partials.Channel, Discord.Partials.Reaction],
   botGuilds: [process.env.TEST_GUILD_ID],
 });
 
