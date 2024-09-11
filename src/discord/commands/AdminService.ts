@@ -42,21 +42,17 @@ export default class AdminService {
     if (!channel) throw new Error("Channel not found");
     if (!role && !target) {
       await autoDeleteMessage(
-        new ErrorMessageManager.Builder()
-          .send("interaction", interaction, {
-            description: "역할 또는 대상을 입력해주세요.",
-          })
-          .then((m) => m.message),
+        ErrorMessageManager.createOnInteraction(interaction, {
+          description: "역할 또는 대상을 입력해주세요.",
+        }).then((m) => m.message),
       );
       return;
     }
     if (target && target.bot) {
       await autoDeleteMessage(
-        new ErrorMessageManager.Builder()
-          .send("interaction", interaction, {
-            description: "봇은 DM을 받을 수 없습니다...",
-          })
-          .then((m) => m.message),
+        ErrorMessageManager.createOnInteraction(interaction, {
+          description: "봇은 DM을 받을 수 없습니다...",
+        }).then((m) => m.message),
       );
       return;
     }
