@@ -27,11 +27,14 @@ export default class FixedMessageRegister {
     await Promise.all(
       allData.map(async (data) => {
         const guild = await Vars.client.guilds.fetch(data.guildId);
+
         await Promise.all(
           data.channels.map(async (channelId) => {
             const channel = await guild.channels.fetch(channelId);
             if (!channel || !channel.isTextBased()) return;
+
             const messages = await channel.messages.fetch();
+
             await Promise.all(
               messages.map(async (m) => {
                 if (m.author == Vars.client.user) await m.delete();
