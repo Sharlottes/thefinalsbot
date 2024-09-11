@@ -8,7 +8,7 @@ export default class BotInitalizer {
     _: DiscordX.ArgsOf<"ready">,
     client: DiscordX.Client,
   ): Promise<void> {
-    console.time("initalizing BotInitalizer...");
+    console.time("Initializing BotInitalizer...");
 
     DIService.engine.getAllServices();
     await client.initApplicationCommands();
@@ -24,7 +24,7 @@ export default class BotInitalizer {
       `Commands are all registered, total: ${client.applicationCommands.length}`,
     );
     console.log(`Bot ${client.user?.tag} ready`);
-    console.timeEnd("initalizing BotInitalizer...");
+    console.timeEnd("Initializing BotInitalizer...");
   }
 
   @On({ event: "interactionCreate" })

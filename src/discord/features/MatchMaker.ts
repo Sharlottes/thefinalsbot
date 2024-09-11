@@ -43,7 +43,7 @@ export default class MatchMaker {
   }
 
   public async init(): Promise<void> {
-    console.time("initalizing MatchMaker...");
+    console.time("Initializing MatchMaker...");
 
     this.#matchMakingMessage = await FixedMessageRegister.sendMessage(
       Vars.matchMakingAnnounceChannel,
@@ -51,7 +51,7 @@ export default class MatchMaker {
     );
     await this.rerender();
 
-    console.timeEnd("initalizing MatchMaker...");
+    console.timeEnd("Initializing MatchMaker...");
   }
 
   @On({ event: "voiceStateUpdate" })

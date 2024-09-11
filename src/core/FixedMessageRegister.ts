@@ -22,7 +22,7 @@ export default class FixedMessageRegister {
   }
 
   public async init() {
-    console.time("initalizing FixedMessageRegister...");
+    console.time("Initializing FixedMessageRegister...");
     const allData = await FixedMessageModel.find();
     await Promise.all(
       allData.map(async (data) => {
@@ -41,7 +41,7 @@ export default class FixedMessageRegister {
         );
       }),
     );
-    console.timeEnd("initalizing FixedMessageRegister...");
+    console.timeEnd("Initializing FixedMessageRegister...");
   }
 
   public static async cancelMessage(channel: Discord.GuildTextBasedChannel) {
