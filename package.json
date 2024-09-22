@@ -6,7 +6,7 @@
   "main": "dist/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon --exec \"yarn build && yarn start\"",
-    "prod": "cross-env NODE_ENV=production yarn build && node --max-old-space-size=1024 --import=extensionless/register ./dist/main.js",
+    "prod": "cross-env NODE_ENV=production node --max-old-space-size=1024 --import=extensionless/register ./dist/main.js",
     "start": "node --import=extensionless/register ./dist/main.js",
     "build": "swc ./src -d dist --strip-leading-paths",
     "ts-check": "tsc --noEmit",
