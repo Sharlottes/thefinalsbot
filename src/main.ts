@@ -52,7 +52,7 @@ console.timeEnd("importing...");
 console.time("bot login...");
 await client.login(process.env.TOKEN);
 console.timeEnd("bot login...");
-await mongoose.connect(process.env.MONGO_URL);
+await mongoose.connect(process.env.MONGO_URL, { dbName: process.env.DB_NAME });
 await Vars.init(client);
 await ServerSettingManager.main.init(client);
 await Vars.initServerSetting(client);
