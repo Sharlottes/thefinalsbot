@@ -16,7 +16,7 @@ export default function MessageManager<OT = unknown>() {
   return class MessageManager {
     constructor(
       public readonly message: Discord.Message,
-      public messageData: MessageData = Object.create(emptyMessageData),
+      public messageData: MessageData = Object.create(getEmptyMessageData()),
       public readonly options: OT,
     ) {}
 
@@ -63,7 +63,7 @@ export default function MessageManager<OT = unknown>() {
     }
 
     protected static async createMessageData(managerOptions: OT): Promise<MessageData & OT> {
-      return Object.create(emptyMessageData);
+      return Object.create(getEmptyMessageData());
     }
 
     protected static isDataEmpty(messageData: MessageData) {
@@ -104,11 +104,11 @@ export interface MessageData {
   attachments: Discord.Attachment[];
   components: Discord.ActionRowBuilder<Discord.MessageActionRowComponentBuilder>[];
 }
-const emptyMessageData = {
+const getEmptyMessageData = () => ({
   content: null,
   embeds: [],
   allowedMentions: {},
   files: [],
   attachments: [],
   components: [],
-};
+});
