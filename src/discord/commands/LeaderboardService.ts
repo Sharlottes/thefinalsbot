@@ -167,8 +167,9 @@ export default class LeaderboardService {
       manager.messageData.embeds = [LeaderboardHelpers.buildUserDataEmbed(data)];
       manager.messageData.files = "league" in data ? [new AttachmentBuilder(rankImgUri)] : [];
       await manager.update();
-      manager.events.once("change", handleChange);
     };
     await handleChange();
+    manager.events.on("change", handleChange);
+    manager.events.once("end", () => manager.events.off("change", handleChange));
   }
 }
