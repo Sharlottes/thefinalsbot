@@ -106,6 +106,7 @@ export default class LeaderboardService {
     };
     await handleChange();
     manager.events.on("change", handleChange);
+    manager.events.once("end", () => manager.events.off("change", handleChange));
   }
   @Slash({
     name: "전적검색",
@@ -154,9 +155,9 @@ export default class LeaderboardService {
       manager.messageData.embeds = [this.buildUserDataEmbed(data)];
       manager.messageData.files = "league" in data ? [new AttachmentBuilder(rankImgUri)] : [];
       await manager.update();
+      manager.events.once("change", handleChange);
     };
     await handleChange();
-    manager.events.on("change", handleChange);
   }
 
   async buildTableImg(dataset: LeaderBoardUserData[], platform: string, version: string) {
@@ -207,8 +208,7 @@ export default class LeaderboardService {
         ),
       );
     });
-
-    return await satori(
+    const element = (
       <div
         style={{
           display: "flex",
@@ -265,14 +265,13 @@ export default class LeaderboardService {
             </div>
           ))}
         </div>
-      </div>,
-      {
-        width: 700,
-        height: 450,
-
-        fonts: [Vars.font],
-      },
-    ).then((svg) => new Resvg(svg).render().asPng());
+      </div>
+    );
+    return await satori(element, {
+      width: 700,
+      height: 450,
+      fonts: [Vars.font],
+    }).then((svg) => new Resvg(svg).render().asPng());
   }
 
   /**

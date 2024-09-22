@@ -5,6 +5,8 @@ import MessageManager, { MessageData } from "@/discord/messageManagers/MessageMa
 import { ActionRowBuilder, ButtonStyle } from "discord.js";
 import EventEmitter from "node:events";
 import TypedEmitter from "typed-emitter";
+import Vars from "@/Vars";
+import throwInteraction from "@/utils/throwInteraction";
 
 const btn_symbols = [
   { symbol: "⏪", page: -10 },
@@ -16,6 +18,7 @@ const btn_symbols = [
 
 type PaginationEvents = {
   change: () => void;
+  end: () => void;
 };
 interface PaginationOptions {
   size: number;
@@ -31,7 +34,6 @@ export default class PaginationMessageManager extends MessageManager<PaginationO
   }
   public set $currentPage(value) {
     this.currentPage = value;
-    this.updateChanges();
   }
 
   public declare static createOnChannel: OverwriteReturn<
@@ -50,14 +52,30 @@ export default class PaginationMessageManager extends MessageManager<PaginationO
     options: PaginationOptions,
   ) {
     const manager = new this(message, messageData, options);
-    manager.events.on("change", () => manager.updateChanges());
     manager.size = options.size;
-    await manager.updateChanges();
+    manager.messageData.components[0] = manager.buildButtons();
+    const deleteHandler = (msg: Discord.Message | Discord.PartialMessage) => {
+      if (msg.id === message.id) {
+        manager.events.emit("end");
+        Vars.client.off("messageDelete", deleteHandler);
+      }
+    };
+    Vars.client.on("messageDelete", deleteHandler);
+
     return manager;
   }
 
   private async updateChanges() {
-    this.messageData.components[0] = this.buildButtons();
+    for (let i = 0; i < btn_symbols.length; i++) {
+      const component = this.messageData.components[0].components[i] as Discord.ButtonBuilder;
+      if (btn_symbols[i].symbol == "/") {
+        component.setLabel(`${this.currentPage + 1} / ${this.size}`);
+      }
+      const isDisable =
+        this.currentPage + btn_symbols[i].page < 0 || this.currentPage + btn_symbols[i].page > this.size - 1;
+      component.setDisabled(isDisable);
+    }
+
     await this.update();
     this.events.emit("change");
   }
@@ -105,7 +123,8 @@ export default class PaginationMessageManager extends MessageManager<PaginationO
             disabled:
               this.currentPage + btn_symbols[i].page < 0 || this.currentPage + btn_symbols[i].page > this.size - 1,
           },
-          () => {
+          (inter) => {
+            throwInteraction(inter);
             this.currentPage += btn_symbols[i].page;
             this.updateChanges();
           },
