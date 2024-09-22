@@ -47,7 +47,7 @@ export default class Vars {
         ? path.resolve(dirname, "../../public")
         : path.resolve(dirname, "../public");
     const ranksImgDir = path.resolve(publicDir, "./images/ranks");
-    const fontDir = path.resolve(publicDir, "./fonts/Pretendard-Regular.otf");
+    const fontDir = path.resolve(publicDir, "./fonts/Pretendard-Regular.woff");
     await Promise.all([
       new Promise<void>(async (res) => {
         const files = await awaitReadDir(ranksImgDir);
