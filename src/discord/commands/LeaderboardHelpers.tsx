@@ -13,7 +13,14 @@ export default class LeaderboardHelpers {
     dataset.forEach((data) => {
       tableCells[0].push(
         <p style={{ margin: 0, height: "32px", position: "relative", bottom: "-4px" }}>
-          #{data.rank}
+          <span
+            style={{
+              fontSize: data.rank >= 1000 ? "0.8em" : "1em",
+            }}
+          >
+            #{data.rank}
+          </span>
+
           {"change" in data && (
             <span
               style={{
@@ -33,21 +40,29 @@ export default class LeaderboardHelpers {
       );
 
       const [playerName, playerHandle] = data.name.split("#");
+      const totalStrLen = data.rank.toString().length + playerName.length;
+      const prefStrLen = 20;
       tableCells[1].push(
         <div
           style={{
             height: "32px",
             display: "flex",
+            flexDirection: totalStrLen >= prefStrLen ? "column" : "row",
             alignItems: "flex-end",
-            flexWrap: "wrap",
             position: "relative",
-            bottom: playerName.length > 16 ? 0 : "-4px",
+            bottom: totalStrLen >= prefStrLen ? "-8px" : "8px",
           }}
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {Array.from({ length: 1 + playerName.length / 20 }).map((_, i) => (
-              <span key={i} style={{ fontSize: playerName.length > 20 ? "1em" : "1.15em", fontWeight: "bold" }}>
-                {playerName.slice(i * 20, Math.min(playerName.length, (i + 1) * 20))}
+            {Array.from({ length: 1 + playerName.length / 16 }).map((_, i) => (
+              <span
+                key={i}
+                style={{
+                  fontSize: totalStrLen >= prefStrLen ? "0.85em" : playerName.length >= prefStrLen ? "1em" : "1.15em",
+                  fontWeight: "bold",
+                }}
+              >
+                {playerName.slice(i * 16, Math.min(playerName.length, (i + 1) * 16))}
               </span>
             ))}
           </div>
@@ -103,7 +118,7 @@ export default class LeaderboardHelpers {
             justifyContent: "space-between",
             backgroundColor: colors.cyan.cyan2,
             borderRadius: "24px",
-            padding: "8px",
+            padding: "4px",
           }}
         >
           <div

@@ -104,12 +104,11 @@ export default class LeaderboardService {
       );
       return;
     }
-
     const leaderboardDataList = result.data.data!;
-
     const manager = await PaginationMessageManager.createOnInteraction(interaction, {
       size: ~~(result.data.count / 20),
     });
+    manager.messageData.content = `### The Finals ${version} 리더보드 (${Object.keys(validPlatforms).find((key) => validPlatforms[key as keyof typeof validPlatforms] === platform)})`;
     manager.messageData.components[1] = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder().setLabel("처음으로").setStyle(ButtonStyle.Secondary).setCustomId("leaderboard-tofirst-btn"),
       new ButtonBuilder().setLabel("닉네임 찾기").setStyle(ButtonStyle.Success).setCustomId("leaderboard-search-btn"),
