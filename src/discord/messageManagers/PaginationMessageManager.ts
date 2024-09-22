@@ -106,7 +106,7 @@ export default class PaginationMessageManager extends MessageManager<PaginationO
                 textValidators: [onlyUint],
                 valueValidators: [onlyInRange],
                 onConfirm: (amount) => {
-                  this.currentPage = +amount;
+                  this.currentPage = +amount - 1;
                   this.updateChanges();
                 },
               });
