@@ -30,7 +30,7 @@
     "discord.js": "^14.14.1",
     "discordx": "^11.9.0",
     "dotenv": "^16.4.4",
-    "express": "^4.19.2",
+    "express": "^4.20.0",
     "http-status-codes": "^2.3.0",
     "mongodb": "^6.5.0",
     "mongoose": "^8.3.2",
