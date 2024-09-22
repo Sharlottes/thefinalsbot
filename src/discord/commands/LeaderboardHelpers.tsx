@@ -10,14 +10,13 @@ const rankColor = [0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8, 0xe0115f];
 export default class LeaderboardHelpers {
   public static async buildTableImg(dataset: LeaderBoardUserData[], platform: string, version: string) {
     const tableCells: React.JSX.Element[][] = Array.from({ length: 3 }, () => []);
-    dataset.map((data) => {
+    dataset.forEach((data) => {
       tableCells[0].push(
-        <p style={{ margin: 0, height: "32px", position: "relative" }}>
+        <p style={{ margin: 0, height: "32px", position: "relative", bottom: "-4px" }}>
           #{data.rank}
           {"change" in data && (
             <span
               style={{
-                margin: 0,
                 color: data.change > 0 ? colors.greenDark.green4 : colors.redDark.red4,
                 height: "32px",
                 fontSize: "0.8em",
@@ -35,20 +34,37 @@ export default class LeaderboardHelpers {
 
       const [playerName, playerHandle] = data.name.split("#");
       tableCells[1].push(
-        <div style={{ height: "32px", display: "flex", alignItems: "flex-end", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "1.15em", fontWeight: "bold" }}>{playerName}</span>
-          <span style={{ fontSize: "0.7em", color: colors.grayDark.gray6 }}>#{playerHandle}</span>
+        <div
+          style={{
+            height: "32px",
+            display: "flex",
+            alignItems: "flex-end",
+            flexWrap: "wrap",
+            position: "relative",
+            bottom: playerName.length > 16 ? 0 : "-4px",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {Array.from({ length: 1 + playerName.length / 20 }).map((_, i) => (
+              <span key={i} style={{ fontSize: playerName.length > 20 ? "1em" : "1.15em", fontWeight: "bold" }}>
+                {playerName.slice(i * 20, Math.min(playerName.length, (i + 1) * 20))}
+              </span>
+            ))}
+          </div>
+          {playerHandle && <span style={{ fontSize: "0.7em", color: colors.grayDark.gray6 }}>#{playerHandle}</span>}
         </div>,
       );
 
-      const rankImgUri =
-        "league" in data
-          ? "data:image/png;base64," + Vars.images[`${data.league.toLowerCase().replaceAll(" ", "-")}.png`]
-          : "";
+      const imgName = (() => {
+        if (!("league" in data)) return;
+        if (version === "cb1") return data.league.toLowerCase().split(" ")[0];
+        return data.league.toLowerCase().replaceAll(" ", "-");
+      })();
+      const rankImgUri = Vars.images[`${imgName}.png`] ? "data:image/png;base64," + Vars.images[`${imgName}.png`] : "";
       tableCells[2].push(
         "league" in data ? (
           <div style={{ display: "flex", gap: "2px", alignItems: "center" }}>
-            <img src={rankImgUri} width={32} height={32} />
+            {rankImgUri && <img src={rankImgUri} width={32} height={32} />}
 
             <div
               style={{

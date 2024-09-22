@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ApplicationCommandOptionType, AttachmentBuilder } from "discord.js";
-import { Slash, SlashOption, Discord } from "discordx";
+import { Slash, SlashOption, Discord, SlashChoice } from "discordx";
 import { StatusCodes } from "http-status-codes";
 import PaginationMessageManager from "../messageManagers/PaginationMessageManager";
 import SlashOptionBuilder from "@/utils/SlashOptionBuilder";
@@ -7,70 +7,70 @@ import LeaderboardHelpers from "./LeaderboardHelpers";
 import ErrorMessageManager from "../messageManagers/ErrorMessageManager";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 
-const validVersions = [
-  "cb1",
-  "closedbeta1",
-  "cb2",
-  "closedbeta2",
-  "ob",
-  "openbeta",
-  "s1",
-  "season1",
-  "s2",
-  "season2",
-  "live",
-  "s3",
-  "season3",
-  "s3worldtour",
-  "season3worldtour",
-];
-const validPlatforms = ["steam", "xbox", "psn", "crossplay"];
+const validVersions = {
+  클베1: "cb1",
+  클베2: "cb2",
+  오픈베타: "ob",
+  시즌1: "s1",
+  시즌2: "s2",
+  시즌3: "s3",
+  시즌3월투: "s3worldtour",
+};
+const validPlatforms = {
+  스팀: "steam",
+  엑박: "xbox",
+  플스: "psn",
+  전체: "crossplay",
+};
 
 const VersionParameter = SlashOptionBuilder.create({
   name: "버전",
-  description: "리더보드 시즌을 선택합니다. (cb1, cb2, ob, s1, s2, live, s3, s3worldtour)",
+  description: `리더보드 시즌을 선택합니다. ${Object.keys(validVersions).join(", ")}`,
   required: false,
   type: ApplicationCommandOptionType.String,
-  default: "s3",
+  default: "시즌3",
   validators: [
     [
-      (version) => Boolean(!version || validVersions.includes(version)),
+      (version) => Boolean(!version || Object.keys(validVersions).includes(version)),
       `잘못된 버전입니다.
-가능한 버전 값: ${validVersions.join(", ")}`,
+가능한 버전 값: ${Object.keys(validVersions).join(", ")}`,
     ],
   ],
+  transformer: (value) => validVersions[value as keyof typeof validVersions],
 });
 
 const PlatformParameter = SlashOptionBuilder.create({
   name: "플랫폼",
-  description: "리더보드 플랫폼을 선택합니다. (crossplay, steam, xbox, psn)",
+  description: `리더보드 플랫폼을 선택합니다. ${Object.keys(validPlatforms).join(", ")}`,
   required: false,
   type: ApplicationCommandOptionType.String,
-  default: "crossplay",
+  default: "전체",
   validators: [
     [
-      (platform) => Boolean(!platform || validPlatforms.includes(platform)),
+      (platform) => Boolean(!platform || Object.keys(validPlatforms).includes(platform)),
       `잘못된 플랫폼입니다.
-가능한 플랫폼 값: ${validPlatforms.join(", ")}`,
+가능한 플랫폼 값: ${Object.keys(validPlatforms).join(", ")}`,
     ],
   ],
+  transformer: (value) => validPlatforms[value as keyof typeof validPlatforms],
 });
 
 @Discord()
 export default class LeaderboardService {
   @Slash({
-    name: "랭킹목록",
+    name: "리더보드",
     description: "the finals의 모든 리더보드를 조회합니다.",
   })
   async leaderboard(
+    @SlashChoice(...Object.keys(validVersions))
     @SlashOption(VersionParameter)
     version: string | undefined,
+    @SlashChoice(...Object.keys(validPlatforms))
     @SlashOption(PlatformParameter)
     platform: string | undefined,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
     if (!version || !platform) return;
-
     await interaction.deferReply();
     const result = await fetch(`https://api.the-finals-leaderboard.com/v1/leaderboard/${version}/${platform}`)
       .then(async (response) => ({
@@ -93,8 +93,8 @@ export default class LeaderboardService {
       );
       return;
     }
-    const leaderboardDataList = result.data.data!;
 
+    const leaderboardDataList = result.data.data!;
     const manager = await PaginationMessageManager.createOnInteraction(interaction, {
       size: ~~(result.data.count / 20),
     });
@@ -111,9 +111,10 @@ export default class LeaderboardService {
     manager.events.on("change", handleChange);
     manager.events.once("end", () => manager.events.off("change", handleChange));
   }
+
   @Slash({
     name: "전적검색",
-    description: "TheFinals의 랭크를 검색합니다 (최소순위 10000위)",
+    description: "TheFinals의 랭크를 검색합니다. (최소순위 10000위)",
   })
   async search(
     @SlashOption({
@@ -123,8 +124,10 @@ export default class LeaderboardService {
       type: ApplicationCommandOptionType.String,
     })
     target: string,
+    @SlashChoice(...Object.keys(validVersions))
     @SlashOption(VersionParameter)
     version: string | undefined,
+    @SlashChoice(...Object.keys(validPlatforms))
     @SlashOption(PlatformParameter)
     platform: string | undefined,
     interaction: Discord.ChatInputCommandInteraction,
