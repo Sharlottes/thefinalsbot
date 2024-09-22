@@ -4,6 +4,8 @@ import { StatusCodes } from "http-status-codes";
 import PaginationMessageManager from "../messageManagers/PaginationMessageManager";
 import SlashOptionBuilder from "@/utils/SlashOptionBuilder";
 import LeaderboardHelpers from "./LeaderboardHelpers";
+import ErrorMessageManager from "../messageManagers/ErrorMessageManager";
+import autoDeleteMessage from "@/utils/autoDeleteMessage";
 
 const validVersions = [
   "cb1",
@@ -76,22 +78,29 @@ export default class LeaderboardService {
         data: (await response.json()) as LeaderboardData,
       }))
       .catch((e) => console.warn(e)); // print warning and ignore.
-
     if (result === undefined || result.status != StatusCodes.OK) {
-      interaction.editReply("서버에 문제가 있어 명령어를 처리할 수 없습니다. X(");
+      autoDeleteMessage(
+        ErrorMessageManager.createOnInteraction(interaction, {
+          description: "서버에 문제가 있어 전적검색을 할 수 없습니다. X(",
+        }).then((m) => m.message),
+      );
+      return;
+    } else if (result.data.count === 0) {
+      autoDeleteMessage(
+        ErrorMessageManager.createOnInteraction(interaction, {
+          description: "검색 결과가 없습니다 (ㅠ ㅠ)",
+        }).then((m) => m.message),
+      );
       return;
     }
-    if (result.data.count === 0) {
-      interaction.editReply("검색 결과가 없습니다 (ㅠ ㅠ)");
-      return;
-    }
+    const leaderboardDataList = result.data.data!;
 
     const manager = await PaginationMessageManager.createOnInteraction(interaction, {
       size: ~~(result.data.count / 20),
     });
     const handleChange = async () => {
       const svg = await LeaderboardHelpers.buildTableImg(
-        result.data.data!.slice(manager.$currentPage * 20, (manager.$currentPage + 1) * 20),
+        leaderboardDataList.slice(manager.$currentPage * 20, (manager.$currentPage + 1) * 20),
         platform,
         version,
       )!;
@@ -131,18 +140,27 @@ export default class LeaderboardService {
         status: response.status,
         data: (await response.json()) as LeaderboardData,
       }))
-      .catch((e) => console.warn(e)); // print warning and ignore.
+      .catch((e) => console.warn(e));
     if (result === undefined || result.status != StatusCodes.OK) {
-      interaction.editReply("서버에 문제가 있어 전적검색을 할 수 없습니다. X(");
+      autoDeleteMessage(
+        ErrorMessageManager.createOnInteraction(interaction, {
+          description: "서버에 문제가 있어 전적검색을 할 수 없습니다. X(",
+        }).then((m) => m.message),
+      );
       return;
     } else if (result.data.count === 0) {
-      interaction.editReply("검색 결과가 없습니다 (ㅠ ㅠ)");
+      autoDeleteMessage(
+        ErrorMessageManager.createOnInteraction(interaction, {
+          description: "검색 결과가 없습니다 (ㅠ ㅠ)",
+        }).then((m) => m.message),
+      );
       return;
     }
+    const leaderboardDataList = result.data.data!;
 
     const manager = await PaginationMessageManager.createOnInteraction(interaction, { size: result.data.count });
     const handleChange = async () => {
-      const data = result.data.data![manager.$currentPage]; // 순서상 data가 없는건 불가능
+      const data = leaderboardDataList[manager.$currentPage];
       const rankImgUri =
         "league" in data ? `public/images/ranks/${data.league.toLowerCase().replaceAll(" ", "-")}.png` : "";
 
