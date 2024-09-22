@@ -93,15 +93,15 @@ export default class LeaderboardService {
     }
 
     const manager = await PaginationMessageManager.createOnInteraction(interaction, {
-      size: ~~(result.data.count / 10),
+      size: ~~(result.data.count / 20),
     });
     const handleChange = async () => {
       const svg = await this.buildTableImg(
-        result.data.data!.slice(manager.$currentPage * 10, (manager.$currentPage + 1) * 10),
+        result.data.data!.slice(manager.$currentPage * 20, (manager.$currentPage + 1) * 20),
         platform,
         version,
-      );
-      manager.messageData.files = [new AttachmentBuilder(svg!)];
+      )!;
+      manager.messageData.files = [new AttachmentBuilder(svg)];
       await manager.update();
     };
     await handleChange();
@@ -161,33 +161,46 @@ export default class LeaderboardService {
   }
 
   async buildTableImg(dataset: LeaderBoardUserData[], platform: string, version: string) {
-    const tableCells: React.JSX.Element[][] = Array.from({ length: 4 }, () => []);
-    dataset.map((data, i) => {
-      tableCells[0].push(<p style={{ margin: 0, height: "32px" }}>#{data.rank}</p>);
-      tableCells[1].push(
-        "change" in data ? (
-          <p
-            style={{
-              margin: 0,
-              color: data.change > 0 ? colors.greenDark.green4 : colors.redDark.red4,
-              height: "32px",
-            }}
-          >
-            {data.change > 0 ? "+" + data.change : data.change}
-          </p>
-        ) : (
-          <></>
-        ),
+    const tableCells: React.JSX.Element[][] = Array.from({ length: 3 }, () => []);
+    dataset.map((data) => {
+      tableCells[0].push(
+        <p style={{ margin: 0, height: "32px", position: "relative" }}>
+          #{data.rank}
+          {"change" in data && (
+            <span
+              style={{
+                margin: 0,
+                color: data.change > 0 ? colors.greenDark.green4 : colors.redDark.red4,
+                height: "32px",
+                fontSize: "0.8em",
+                fontWeight: "bold",
+                position: "absolute",
+                right: "-4px",
+                bottom: "-16px",
+              }}
+            >
+              {data.change > 0 ? `+${data.change}` : data.change < 0 ? `${data.change}` : ""}
+            </span>
+          )}
+        </p>,
       );
-      tableCells[2].push(<p style={{ margin: 0, height: "32px" }}>{data.name}</p>);
-      tableCells[3].push(
+
+      const [playerName, playerHandle] = data.name.split("#");
+      tableCells[1].push(
+        <div style={{ height: "32px", display: "flex", alignItems: "flex-end", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "1.15em", fontWeight: "bold" }}>{playerName}</span>
+          <span style={{ fontSize: "0.7em", color: colors.grayDark.gray6 }}>#{playerHandle}</span>
+        </div>,
+      );
+
+      const rankImgUri =
+        "league" in data
+          ? "data:image/png;base64," + Vars.images[`${data.league.toLowerCase().replaceAll(" ", "-")}.png`]
+          : "";
+      tableCells[2].push(
         "league" in data ? (
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <img
-              src={"data:image/png;base64," + Vars.images[`${data.league.toLowerCase().replaceAll(" ", "-")}.png`]}
-              width={32}
-              height={32}
-            />
+          <div style={{ display: "flex", gap: "2px", alignItems: "center" }}>
+            <img src={rankImgUri} width={32} height={32} />
 
             <div
               style={{
@@ -196,7 +209,7 @@ export default class LeaderboardService {
                 flexDirection: "column",
               }}
             >
-              <p style={{ margin: 0, fontSize: "0.75em" }}>{data.league}</p>
+              <p style={{ margin: 0, fontSize: "0.85em", fontWeight: "bold" }}>{data.league}</p>
               {"cashouts" in data && <p style={{ margin: 0, fontSize: "0.75em" }}>${data.cashouts}</p>}
               {"rankScore" in data && <p style={{ margin: 0, fontSize: "0.75em" }}>{data.rankScore}p</p>}
             </div>
@@ -212,66 +225,89 @@ export default class LeaderboardService {
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
           width: "100%",
           height: "100%",
-          alignItems: "center",
-          justifyContent: "space-around",
-          backgroundColor: colors.ruby.ruby2,
-          borderRadius: "8px",
-          boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-          padding: "8px",
-          fontWeight: "bold",
+          backgroundColor: "#2f2f2f",
         }}
       >
-        <h2
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          The Finals {version.toUpperCase()} {platform} Leaderboard
-        </h2>
-        <div
-          style={{
-            margin: "8px",
-            borderRadius: "8px",
-            width: "100%",
-            height: "1px",
-            backgroundColor: colors.gray.gray6,
-          }}
-        />
         <div
           style={{
             display: "flex",
-            justifyContent: "space-around",
             width: "100%",
+            height: "100%",
+            gap: "12px",
+            justifyContent: "space-between",
+            backgroundColor: colors.cyan.cyan2,
+            borderRadius: "24px",
+            padding: "8px",
           }}
         >
-          {tableCells.map((cells, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-around",
-                gap: "8px",
-              }}
-            >
-              {cells.map((cell, j) => (
-                <Fragment key={j}>{cell}</Fragment>
-              ))}
-            </div>
-          ))}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-around",
+              gap: "4px",
+              flex: 1,
+            }}
+          >
+            {tableCells.map((cells, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-around",
+                  gap: "8px",
+                }}
+              >
+                {cells.slice(0, cells.length / 2).map((cell, j) => (
+                  <Fragment key={j}>{cell}</Fragment>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              borderRadius: "8px",
+              height: "100%",
+              width: "1px",
+              backgroundColor: colors.blackA.blackA4,
+            }}
+          />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-around",
+              gap: "4px",
+              flex: 1,
+            }}
+          >
+            {tableCells.map((cells, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-around",
+                  gap: "8px",
+                }}
+              >
+                {cells.slice(cells.length / 2, cells.length).map((cell, j) => (
+                  <Fragment key={j}>{cell}</Fragment>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
-    return await satori(element, {
+
+    const svg = await satori(element, {
       width: 700,
-      height: 450,
+      height: 400,
       fonts: [Vars.font],
-    }).then((svg) => new Resvg(svg).render().asPng());
+    });
+    return new Resvg(svg).render().asPng();
   }
 
   /**
