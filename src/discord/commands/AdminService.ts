@@ -66,7 +66,6 @@ export default class AdminService {
     if (target) targets.push(target);
     const targetNames = targets.map((t) => t.displayName).join(", ");
 
-    await interaction.deferReply();
     const guideMessage = await interaction.editReply({
       embeds: [
         new EmbedBuilder()
