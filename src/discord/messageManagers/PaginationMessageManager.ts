@@ -34,6 +34,7 @@ export default class PaginationMessageManager extends MessageManager<PaginationO
   }
   public set $currentPage(value) {
     this.currentPage = value;
+    this.updateChanges();
   }
 
   public declare static createOnChannel: OverwriteReturn<
@@ -54,14 +55,15 @@ export default class PaginationMessageManager extends MessageManager<PaginationO
     const manager = new this(message, messageData, options);
     manager.size = options.size;
     manager.messageData.components[0] = manager.buildButtons();
+    const interactionHandler = manager.handleInteraction.bind(manager);
     const deleteHandler = (msg: Discord.Message | Discord.PartialMessage) => {
       if (msg.id === message.id) {
         manager.events.emit("end");
         Vars.client.off("messageDelete", deleteHandler);
-        Vars.client.off("interactionCreate", manager.handleInteraction);
+        Vars.client.off("interactionCreate", interactionHandler);
       }
     };
-    Vars.client.on("interactionCreate", manager.handleInteraction);
+    Vars.client.on("interactionCreate", interactionHandler);
     Vars.client.on("messageDelete", deleteHandler);
 
     return manager;

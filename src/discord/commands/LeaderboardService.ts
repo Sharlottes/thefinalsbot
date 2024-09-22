@@ -1,4 +1,11 @@
-import { ActionRowBuilder, ApplicationCommandOptionType, AttachmentBuilder } from "discord.js";
+import {
+  ActionRowBuilder,
+  ApplicationCommandOptionType,
+  AttachmentBuilder,
+  bold,
+  ButtonBuilder,
+  ButtonStyle,
+} from "discord.js";
 import { Slash, SlashOption, Discord, SlashChoice } from "discordx";
 import { StatusCodes } from "http-status-codes";
 import PaginationMessageManager from "../messageManagers/PaginationMessageManager";
@@ -6,6 +13,9 @@ import SlashOptionBuilder from "@/utils/SlashOptionBuilder";
 import LeaderboardHelpers from "./LeaderboardHelpers";
 import ErrorMessageManager from "../messageManagers/ErrorMessageManager";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
+import Vars from "@/Vars";
+import PrimitiveInputMessageManager from "../messageManagers/inputs/PrimitiveInputMessageManager";
+import { InputResolvers } from "../messageManagers/inputs/InputResolvers";
 
 const validVersions = {
   클베1: "cb1",
@@ -71,6 +81,7 @@ export default class LeaderboardService {
     interaction: Discord.ChatInputCommandInteraction,
   ) {
     if (!version || !platform) return;
+
     await interaction.deferReply();
     const result = await fetch(`https://api.the-finals-leaderboard.com/v1/leaderboard/${version}/${platform}`)
       .then(async (response) => ({
@@ -95,9 +106,71 @@ export default class LeaderboardService {
     }
 
     const leaderboardDataList = result.data.data!;
+
     const manager = await PaginationMessageManager.createOnInteraction(interaction, {
       size: ~~(result.data.count / 20),
     });
+    manager.messageData.components[1] = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setLabel("처음으로").setStyle(ButtonStyle.Secondary).setCustomId("leaderboard-tofirst-btn"),
+      new ButtonBuilder().setLabel("닉네임 찾기").setStyle(ButtonStyle.Success).setCustomId("leaderboard-search-btn"),
+      new ButtonBuilder().setLabel("끝으로").setStyle(ButtonStyle.Secondary).setCustomId("leaderboard-tolast-btn"),
+    );
+    const handleInteraction = async (interaction: Discord.Interaction) => {
+      if (!interaction.isButton()) return;
+      switch (interaction.customId) {
+        case "leaderboard-tofirst-btn":
+          manager.$currentPage = 0;
+          autoDeleteMessage(interaction.reply("처음 페이지로 이동합니다."), 1500);
+          break;
+
+        case "leaderboard-tolast-btn":
+          manager.$currentPage = manager.size - 1;
+          autoDeleteMessage(interaction.reply("마지막 페이지로 이동합니다."), 1500);
+          break;
+
+        case "leaderboard-search-btn":
+          await interaction.deferReply({ ephemeral: true });
+          const askMessage = await interaction.channel!.send("검색할 닉네임을 입력해주세요.");
+          const name = await PrimitiveInputMessageManager.createOnChannel(interaction.channel!, {
+            inputResolver: InputResolvers.text,
+          }).then((m) => m.value?.toLowerCase());
+          askMessage.delete();
+          if (!name) return;
+
+          const founds: [string, number][] = [];
+          for (let i = 0; i < leaderboardDataList.length; i++) {
+            const data = leaderboardDataList[i];
+            if (!data.name.toLowerCase().includes(name)) continue;
+            founds.push([data.name, ~~(i / 20)]);
+          }
+
+          if (founds.length === 0) {
+            autoDeleteMessage(
+              ErrorMessageManager.createOnInteraction(interaction, {
+                description: "검색 결과가 없습니다.",
+              }).then((m) => m.message),
+              1500,
+            );
+            return;
+          } else if (founds.length === 1) {
+            manager.$currentPage = founds[0][1];
+            autoDeleteMessage(
+              interaction.editReply({
+                content: `발견: ${bold(founds[0][0])}. 검색 결과가 1개입니다, 해당 페이지로 이동합니다.`,
+              }),
+            );
+            return;
+          } else {
+            interaction.editReply({
+              content: `검색 결과가 ${founds.length}개입니다.
+${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
+            });
+            return;
+          }
+      }
+    };
+
+    Vars.client.on("interactionCreate", handleInteraction);
     const handleChange = async () => {
       const svg = await LeaderboardHelpers.buildTableImg(
         leaderboardDataList.slice(manager.$currentPage * 20, (manager.$currentPage + 1) * 20),
@@ -109,7 +182,10 @@ export default class LeaderboardService {
     };
     await handleChange();
     manager.events.on("change", handleChange);
-    manager.events.once("end", () => manager.events.off("change", handleChange));
+    manager.events.once("end", () => {
+      manager.events.off("change", handleChange);
+      Vars.client.off("interactionCreate", handleInteraction);
+    });
   }
 
   @Slash({
