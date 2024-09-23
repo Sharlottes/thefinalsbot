@@ -89,12 +89,16 @@ export default class LeaderboardHelpers {
               }}
             >
               <p style={{ margin: 0, fontSize: "0.85em", fontWeight: "bold" }}>{data.league}</p>
-              {"cashouts" in data && <p style={{ margin: 0, fontSize: "0.75em" }}>${data.cashouts}</p>}
-              {"rankScore" in data && <p style={{ margin: 0, fontSize: "0.75em" }}>{data.rankScore}p</p>}
+              {"cashouts" in data && (
+                <p style={{ margin: 0, fontSize: "0.75em" }}>${data.cashouts.toLocaleString("en-US")}</p>
+              )}
+              {"rankScore" in data && (
+                <p style={{ margin: 0, fontSize: "0.75em" }}>{data.rankScore.toLocaleString("en-US")}RP</p>
+              )}
             </div>
           </div>
         ) : "cashouts" in data ? (
-          <p style={{ margin: 0, fontSize: "0.75em" }}>${data.cashouts}</p>
+          <p style={{ margin: 0, fontSize: "0.75em" }}>${data.cashouts.toLocaleString("en-US")}</p>
         ) : (
           <></>
         ),
