@@ -114,6 +114,7 @@ export default class LeaderboardService {
       new ButtonBuilder().setLabel("닉네임 찾기").setStyle(ButtonStyle.Success).setCustomId("leaderboard-search-btn"),
       new ButtonBuilder().setLabel("끝으로").setStyle(ButtonStyle.Secondary).setCustomId("leaderboard-tolast-btn"),
     );
+
     const handleInteraction = async (interaction: Discord.Interaction) => {
       if (!interaction.isButton()) return;
       switch (interaction.customId) {
@@ -168,8 +169,6 @@ ${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
           }
       }
     };
-
-    Vars.client.on("interactionCreate", handleInteraction);
     const handleChange = async () => {
       const svg = await LeaderboardHelpers.buildTableImg(
         leaderboardDataList.slice(manager.$currentPage * 20, (manager.$currentPage + 1) * 20),
@@ -179,12 +178,23 @@ ${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
       manager.messageData.files = [new AttachmentBuilder(svg)];
       await manager.update();
     };
-    await handleChange();
-    manager.events.on("change", handleChange);
-    manager.events.once("end", () => {
+    const handleOff = () => {
       manager.events.off("change", handleChange);
       Vars.client.off("interactionCreate", handleInteraction);
-    });
+      clearTimeout(timeout);
+    };
+    const handleTimeout = async () => {
+      const message = await manager.message.fetch();
+      if (message.deletable) {
+        message.delete();
+      }
+    };
+
+    await handleChange();
+    Vars.client.on("interactionCreate", handleInteraction);
+    manager.events.on("change", handleChange);
+    manager.events.once("end", handleOff);
+    const timeout = setTimeout(handleTimeout, 15 * 60 * 1000);
   }
 
   @Slash({
@@ -246,8 +256,19 @@ ${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
       manager.messageData.files = "league" in data ? [new AttachmentBuilder(rankImgUri)] : [];
       await manager.update();
     };
+    const handleOff = () => {
+      manager.events.off("change", handleChange);
+      clearTimeout(timeout);
+    };
+    const handleTimeout = async () => {
+      const message = await manager.message.fetch();
+      if (message.deletable) {
+        message.delete();
+      }
+    };
     await handleChange();
     manager.events.on("change", handleChange);
-    manager.events.once("end", () => manager.events.off("change", handleChange));
+    manager.events.once("end", handleOff);
+    const timeout = setTimeout(handleTimeout, 15 * 60 * 1000);
   }
 }
