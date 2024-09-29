@@ -8,7 +8,7 @@ import PColors from "@/constants/PColors";
 
 const rankColor = [0xea6500, 0xd9d9d9, 0xebb259, 0xc9e3e7, 0x54ebe8, 0xe0115f];
 export default class LeaderboardHelpers {
-  public static async buildTableImg(dataset: LeaderBoardUserData[], platform: string, version: string) {
+  public static async buildTableImg(dataset: LeaderboardData[], platform: string, version: string) {
     const tableCells: React.JSX.Element[][] = Array.from({ length: 3 }, () => []);
     dataset.forEach((data) => {
       tableCells[0].push(
@@ -198,7 +198,7 @@ export default class LeaderboardHelpers {
    *
    * @returns @typs {EmbedBuilder}
    */
-  public static buildUserDataEmbed(data: LeaderBoardUserData): EmbedBuilder {
+  public static buildUserDataEmbed(data: LeaderboardData): EmbedBuilder {
     const builder = new EmbedBuilder()
       .setColor(PColors.primary)
       .setTitle(`${data.name}` /*`#${data.rank} - 『${data.name}』`*/)

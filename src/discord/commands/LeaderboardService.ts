@@ -86,7 +86,7 @@ export default class LeaderboardService {
     const result = await fetch(`https://api.the-finals-leaderboard.com/v1/leaderboard/${version}/${platform}`)
       .then(async (response) => ({
         status: response.status,
-        data: (await response.json()) as LeaderboardData,
+        data: (await response.json()) as TFAPIResponse,
       }))
       .catch((e) => console.warn(e)); // print warning and ignore.
     if (result === undefined || result.status != StatusCodes.OK) {
@@ -226,7 +226,7 @@ ${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
     )
       .then(async (response) => ({
         status: response.status,
-        data: (await response.json()) as LeaderboardData,
+        data: (await response.json()) as TFAPIResponse,
       }))
       .catch((e) => console.warn(e));
     if (result === undefined || result.status != StatusCodes.OK) {
