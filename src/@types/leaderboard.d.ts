@@ -51,11 +51,11 @@ type LeaderboardDataMap = {
   };
   s4sponsor: {
     versions: "crossplay";
-    data: LeaderboardDataS3WT;
+    data: LeaderboardDataS4Sponsor;
   };
   "the-finals": {
     versions: "crossplay";
-    data: LeaderboardDataS3WT;
+    data: LeaderboardDataTF;
   };
   orf: {
     versions: "crossplay";

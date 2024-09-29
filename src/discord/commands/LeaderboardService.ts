@@ -5,6 +5,9 @@ import {
   bold,
   ButtonBuilder,
   ButtonStyle,
+  EmbedBuilder,
+  StringSelectMenuBuilder,
+  ComponentType,
 } from "discord.js";
 import { Slash, SlashOption, Discord, SlashChoice } from "discordx";
 import PaginationMessageManager from "../messageManagers/PaginationMessageManager";
@@ -17,6 +20,7 @@ import PrimitiveInputMessageManager from "../messageManagers/inputs/PrimitiveInp
 import { InputResolvers } from "../messageManagers/inputs/InputResolvers";
 import TFLeaderboard from "@/core/TFLeaderboard";
 import leaderboardsScheme from "@/constants/leaderboardsScheme";
+import throwInteraction from "@/utils/throwInteraction";
 
 const validVersions = {
   클베1: "cb1",
@@ -275,81 +279,162 @@ ${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
 
   @Slash({
     name: "전적검색",
-    description: "TheFinals의 랭크를 검색합니다. (최소순위 10000위)",
+    description: "해당 유저의 리더보드 전적을 탐색합니다.",
   })
   async search(
     @SlashOption({
       name: "검색어",
-      description: "리더보드에서 유저를 검색합니다 (* <= 전체검색)",
+      description: "리더보드에서 유저를 검색합니다",
       required: true,
       type: ApplicationCommandOptionType.String,
     })
     target: string,
-    @SlashChoice(...Object.keys(validVersions))
-    @SlashOption(VersionParameter)
-    version: keyof LeaderboardDataMap | undefined,
-    @SlashChoice(...Object.keys(validPlatforms))
-    @SlashOption(PlatformParameter)
-    platform: Platforms | undefined,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
-    if (!version || !platform) return;
-    // @ts-expect-error
-    if (!leaderboardsScheme[version].includes(platform)) {
-      autoDeleteMessage(
-        ErrorMessageManager.createOnChannel(interaction.channel!, {
-          description: "이 버전엔 해당 플렛폼이 없어요! 자동으로 전체 플렛폼에서 찾을게요...",
-        }).then((m) => m.message),
-      );
-      platform = "crossplay";
-    }
-
     await interaction.deferReply();
     const searchTarget = target === "*" ? "" : target;
-    const response = await TFLeaderboard.main.get(version, platform);
-    if (!response) {
-      autoDeleteMessage(
-        ErrorMessageManager.createOnInteraction(interaction, {
-          description: "서버에 문제가 있어 전적검색을 할 수 없습니다. X(",
-        }).then((m) => m.message),
-      );
-      return;
-    }
-    const leaderboardDataList = response.filter((data) => data.name.toLowerCase().includes(searchTarget.toLowerCase()));
-    if (leaderboardDataList.length == 0) {
-      autoDeleteMessage(
-        ErrorMessageManager.createOnInteraction(interaction, {
-          description: "검색 결과가 없습니다 (ㅠ ㅠ)",
-        }).then((m) => m.message),
-      );
-      return;
-    }
+    const response = await Promise.all(
+      Object.values(validVersions).map(async (version) => ({
+        version,
+        data: (await TFLeaderboard.main.get(version, "crossplay")) ?? [],
+      })),
+    );
 
-    const manager = await PaginationMessageManager.createOnInteraction(interaction, {
-      size: leaderboardDataList.length,
-    });
-    const handleChange = async () => {
-      const data = leaderboardDataList[manager.$currentPage];
-      const rankImgUri =
-        "league" in data ? `public/images/ranks/${data.league.toLowerCase().replaceAll(" ", "-")}.png` : "";
+    const foundList: Record<
+      string,
+      LeaderboardDataNameMixin & { leaderboard: Partial<Record<keyof LeaderboardDataMap, [string, string]>> }
+    > = {};
 
-      manager.messageData.embeds = [LeaderboardHelpers.buildUserDataEmbed(data)];
-      manager.messageData.files = "league" in data ? [new AttachmentBuilder(rankImgUri)] : [];
-      await manager.update();
-    };
-    const handleOff = () => {
-      manager.events.off("change", handleChange);
-      clearTimeout(timeout);
-    };
-    const handleTimeout = async () => {
-      const message = await manager.message.fetch();
-      if (message.deletable) {
-        message.delete();
+    for (let i = 0; i < response.length; i++) {
+      const leaderboardDataList = response[i].data;
+      const founds = leaderboardDataList.filter((data) => data.name.toLowerCase().includes(searchTarget.toLowerCase()));
+
+      for (const found of founds) {
+        const exist = foundList[found.name] ?? {};
+        exist.name = found.name;
+        if (!exist.leaderboard) exist.leaderboard = {};
+        if (found.steamName) exist.steamName = found.steamName;
+        if (found.xboxName) exist.xboxName = found.xboxName;
+        if (found.psnName) exist.psnName = found.psnName;
+
+        const nameMap = Object.fromEntries(Object.entries(validVersions).map(([name, version]) => [version, name]));
+        const version = response[i].version;
+        switch (version) {
+          case "cb1":
+          case "cb2":
+          case "ob":
+          case "s1": {
+            const data = found as LeaderboardDataCB | LeaderboardDataOB | LeaderboardDataS1;
+            exist.leaderboard[version] = [
+              nameMap[version],
+              `${bold(data.league)} (${data.fame.toLocaleString("en-US")}RP)`,
+            ];
+            break;
+          }
+          case "s2": {
+            const data = found as LeaderboardDataS2;
+            exist.leaderboard[version] = [nameMap[version], `${bold(data.league)}`];
+            break;
+          }
+          case "s3":
+          case "s4": {
+            const data = found as LeaderboardDataS3 | LeaderboardDataS4;
+            exist.leaderboard[version] = [
+              nameMap[version],
+              `${bold(data.league)} (${data.rankScore.toLocaleString("en-US")}RP)`,
+            ];
+            break;
+          }
+          case "s3worldtour":
+          case "s4worldtour": {
+            const data = found as LeaderboardDataS3WT | LeaderboardDataS4WT;
+            exist.leaderboard[version] = [
+              nameMap[version],
+              `${bold(data.rank.toLocaleString("en-US"))}위 ($${data.cashouts.toLocaleString("en-US")})`,
+            ];
+            break;
+          }
+          case "s4sponsor": {
+            const data = found as LeaderboardDataS4Sponsor;
+            exist.leaderboard[version] = [
+              nameMap[version],
+              `${data.sponsor} ${bold(data.rank.toLocaleString("en-US"))}위 (${data.fans.toLocaleString("en-US")}명의 팬 보유)`,
+            ];
+            break;
+          }
+          case "the-finals": {
+            const data = found as LeaderboardDataTF;
+            exist.leaderboard[version] = [
+              nameMap[version],
+              `${bold(data.rank.toLocaleString("en-US"))}위 (${data.tournamentWins.toLocaleString("en-US")}승)`,
+            ];
+            break;
+          }
+          case "orf": {
+            const data = found as LeaderboardDataORF;
+            exist.leaderboard[version] = [
+              nameMap[version],
+              `${bold(data.rank.toLocaleString("en-US"))}위 (${data.score.toLocaleString("en-US")}점)`,
+            ];
+            break;
+          }
+        }
+        foundList[found.name] = exist;
       }
+    }
+
+    const list = Object.values(foundList);
+    if (list.length === 0) {
+      autoDeleteMessage(
+        ErrorMessageManager.createOnInteraction(interaction, {
+          description: "검색 결과가 없습니다.",
+        }).then((m) => m.message),
+      );
+      return;
+    }
+
+    let curPage = 0;
+    const selectMenu = new StringSelectMenuBuilder().setCustomId("result-select").addOptions(
+      list.slice(0, 25).map((data, i) => ({
+        label: data.name,
+        value: i.toString(),
+        description:
+          "플렛폼: " +
+          (data.steamName ? `스팀: ${data.steamName}, ` : "") +
+          (data.xboxName ? `엑박: ${data.xboxName}, ` : "") +
+          (data.psnName ? `플스: ${data.psnName}` : ""),
+      })),
+    );
+
+    const buildEmbed = () => {
+      const data = list[curPage];
+      return new EmbedBuilder().setTitle(data.name).setDescription(`
+        ${data.steamName ? `스팀: ${data.steamName}\n` : ""}${data.xboxName ? `엑박: ${data.xboxName}\n` : ""}${data.psnName ? `플스: ${data.psnName}\n` : ""}
+        ${bold("리더보드")}
+        ${Object.values(data.leaderboard)
+          .map(([version, desc]) => `${version}: ${desc}`)
+          .join("\n")}`);
     };
-    await handleChange();
-    manager.events.on("change", handleChange);
-    manager.events.once("end", handleOff);
-    const timeout = setTimeout(handleTimeout, 15 * 60 * 1000);
+
+    let message = await interaction.editReply("계산중...");
+    let tmpInter: Discord.StringSelectMenuInteraction;
+    const rerender = async () => {
+      message = await message.edit({
+        content: "",
+        embeds: [buildEmbed()],
+        components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu)],
+      });
+      tmpInter?.deleteReply();
+      tmpInter = await message.awaitMessageComponent({
+        time: 1000 * 60 * 5,
+        componentType: ComponentType.StringSelect,
+      });
+      curPage = +tmpInter.values[0];
+
+      await tmpInter.deferReply({ ephemeral: true });
+      await rerender();
+    };
+
+    await rerender();
   }
 }

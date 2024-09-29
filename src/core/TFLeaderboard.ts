@@ -40,15 +40,12 @@ export default class TFLeaderboard {
       ? [undefined?]
       : [LeaderboardDataMap[K]["versions"]]
   ) {
-    console.time("gonna get");
-    const id = platform ? `${version}-${platform}` : version;
+    const id = `${version}-${platform ?? "crossplay"}`;
     const data = this.leaderboardCache[id];
     if (data.data.length == 0 || (toUpdate.includes(version) && Date.now() - data.lastUpdated > cronGap)) {
       const data = await this.update(id);
-      console.timeEnd("gonna get");
       return data;
     }
-    console.timeEnd("gonna get");
 
     return data.data;
   }
