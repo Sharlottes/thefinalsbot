@@ -41,10 +41,6 @@ type LeaderboardDataMap = {
     versions: "crossplay";
     data: LeaderboardDataS3WT;
   };
-  "the-finals": {
-    versions: "crossplay";
-    data: LeaderboardDataS3WT;
-  };
   s4: {
     versions: "crossplay";
     data: LeaderboardDataS3WT;
@@ -56,6 +52,14 @@ type LeaderboardDataMap = {
   s4sponsor: {
     versions: "crossplay";
     data: LeaderboardDataS3WT;
+  };
+  "the-finals": {
+    versions: "crossplay";
+    data: LeaderboardDataS3WT;
+  };
+  orf: {
+    versions: "crossplay";
+    data: LeaderboardDataORF;
   };
 };
 
@@ -127,7 +131,7 @@ interface LeaderboardDataTF extends LeaderboardDataNameMixin {
   rank: number;
   tournamentWins: number;
 }
-interface LeaderboardDataTF extends LeaderboardDataNameMixin {
+interface LeaderboardDataORF extends LeaderboardDataNameMixin {
   rank: number;
   score: number;
 }

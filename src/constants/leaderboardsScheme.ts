@@ -14,5 +14,6 @@ const leaderboardsScheme: {
   s4: ["crossplay"],
   s4worldtour: ["crossplay"],
   s4sponsor: ["crossplay"],
+  orf: ["crossplay"],
 };
 export default leaderboardsScheme;

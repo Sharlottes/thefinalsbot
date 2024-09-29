@@ -16,6 +16,7 @@ import Vars from "@/Vars";
 import PrimitiveInputMessageManager from "../messageManagers/inputs/PrimitiveInputMessageManager";
 import { InputResolvers } from "../messageManagers/inputs/InputResolvers";
 import TFLeaderboard from "@/core/TFLeaderboard";
+import leaderboardsScheme from "@/constants/leaderboardsScheme";
 
 const validVersions = {
   클베1: "cb1",
@@ -25,23 +26,29 @@ const validVersions = {
   시즌2: "s2",
   시즌3: "s3",
   시즌3월투: "s3worldtour",
-};
+  시즌3결승전: "the-finals",
+  시즌4: "s4",
+  시즌4월투: "s4worldtour",
+  시즌4스폰서: "s4sponsor",
+  ORF: "orf",
+} satisfies Record<string, keyof typeof leaderboardsScheme>;
+
 const validPlatforms = {
   스팀: "steam",
   엑박: "xbox",
   플스: "psn",
   전체: "crossplay",
-};
+} satisfies Record<string, Platforms>;
 
 const VersionParameter = SlashOptionBuilder.create({
   name: "버전",
   description: `리더보드 시즌을 선택합니다. ${Object.keys(validVersions).join(", ")}`,
   required: false,
   type: ApplicationCommandOptionType.String,
-  default: "시즌3",
+  default: "시즌4",
   validators: [
     [
-      (version) => Boolean(!version || Object.keys(validVersions).includes(version)),
+      (version) => Boolean(!version || Object.keys(validVersions).includes(version.toUpperCase())),
       `잘못된 버전입니다.
 가능한 버전 값: ${Object.keys(validVersions).join(", ")}`,
     ],
