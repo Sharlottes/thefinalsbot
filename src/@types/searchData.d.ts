@@ -11,14 +11,14 @@ interface TFAPIResponse {
 }
 
 type Platforms = "crossplay" | "steam" | "xbox" | "psn";
-type LeaderboardData = ValidVersionMap[keyof ValidVersionMap]["data"];
-type ValidVersionMap = {
+type LeaderboardData = LeaderboardDataMap[keyof LeaderboardDataMap]["data"];
+type LeaderboardDataMap = {
   cb1: {
-    versions: never;
+    versions: null;
     data: LeaderboardDataCB;
   };
   cb2: {
-    versions: never;
+    versions: null;
     data: LeaderboardDataCB;
   };
   ob: {

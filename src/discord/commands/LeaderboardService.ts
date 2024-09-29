@@ -7,7 +7,6 @@ import {
   ButtonStyle,
 } from "discord.js";
 import { Slash, SlashOption, Discord, SlashChoice } from "discordx";
-import { StatusCodes } from "http-status-codes";
 import PaginationMessageManager from "../messageManagers/PaginationMessageManager";
 import SlashOptionBuilder from "@/utils/SlashOptionBuilder";
 import LeaderboardHelpers from "./LeaderboardHelpers";
@@ -16,6 +15,7 @@ import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import Vars from "@/Vars";
 import PrimitiveInputMessageManager from "../messageManagers/inputs/PrimitiveInputMessageManager";
 import { InputResolvers } from "../messageManagers/inputs/InputResolvers";
+import TFLeaderboard from "@/core/TFLeaderboard";
 
 const validVersions = {
   클베1: "cb1",
@@ -74,29 +74,24 @@ export default class LeaderboardService {
   async leaderboard(
     @SlashChoice(...Object.keys(validVersions))
     @SlashOption(VersionParameter)
-    version: string | undefined,
+    version: keyof LeaderboardDataMap | undefined,
     @SlashChoice(...Object.keys(validPlatforms))
     @SlashOption(PlatformParameter)
-    platform: string | undefined,
+    platform: Platforms | undefined,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
     if (!version || !platform) return;
 
     await interaction.deferReply();
-    const result = await fetch(`https://api.the-finals-leaderboard.com/v1/leaderboard/${version}/${platform}`)
-      .then(async (response) => ({
-        status: response.status,
-        data: (await response.json()) as TFAPIResponse,
-      }))
-      .catch((e) => console.warn(e)); // print warning and ignore.
-    if (result === undefined || result.status != StatusCodes.OK) {
+    const leaderboardDataList = await TFLeaderboard.main.get(version, platform);
+    if (!leaderboardDataList) {
       autoDeleteMessage(
         ErrorMessageManager.createOnInteraction(interaction, {
           description: "서버에 문제가 있어 전적검색을 할 수 없습니다. X(",
         }).then((m) => m.message),
       );
       return;
-    } else if (result.data.count === 0) {
+    } else if (leaderboardDataList.length === 0) {
       autoDeleteMessage(
         ErrorMessageManager.createOnInteraction(interaction, {
           description: "검색 결과가 없습니다 (ㅠ ㅠ)",
@@ -104,9 +99,9 @@ export default class LeaderboardService {
       );
       return;
     }
-    const leaderboardDataList = result.data.data!;
+
     const manager = await PaginationMessageManager.createOnInteraction(interaction, {
-      size: ~~(result.data.count / 20),
+      size: ~~(leaderboardDataList.length / 20),
     });
     manager.messageData.content = `### The Finals ${version} 리더보드 (${Object.keys(validPlatforms).find((key) => validPlatforms[key as keyof typeof validPlatforms] === platform)})`;
     manager.messageData.components[1] = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -211,32 +206,27 @@ ${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
     target: string,
     @SlashChoice(...Object.keys(validVersions))
     @SlashOption(VersionParameter)
-    version: string | undefined,
+    version: keyof LeaderboardDataMap | undefined,
     @SlashChoice(...Object.keys(validPlatforms))
     @SlashOption(PlatformParameter)
-    platform: string | undefined,
+    platform: Platforms | undefined,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
     if (!version || !platform) return;
 
     await interaction.deferReply();
     const searchTarget = target === "*" ? "" : target;
-    const result = await fetch(
-      `https://api.the-finals-leaderboard.com/v1/leaderboard/${version}/${platform}?name=${searchTarget}`,
-    )
-      .then(async (response) => ({
-        status: response.status,
-        data: (await response.json()) as TFAPIResponse,
-      }))
-      .catch((e) => console.warn(e));
-    if (result === undefined || result.status != StatusCodes.OK) {
+    const response = await TFLeaderboard.main.get(version, platform);
+    if (!response) {
       autoDeleteMessage(
         ErrorMessageManager.createOnInteraction(interaction, {
           description: "서버에 문제가 있어 전적검색을 할 수 없습니다. X(",
         }).then((m) => m.message),
       );
       return;
-    } else if (result.data.count === 0) {
+    }
+    const leaderboardDataList = response.filter((data) => data.name.toLowerCase().includes(searchTarget.toLowerCase()));
+    if (leaderboardDataList.length == 0) {
       autoDeleteMessage(
         ErrorMessageManager.createOnInteraction(interaction, {
           description: "검색 결과가 없습니다 (ㅠ ㅠ)",
@@ -244,9 +234,10 @@ ${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
       );
       return;
     }
-    const leaderboardDataList = result.data.data!;
 
-    const manager = await PaginationMessageManager.createOnInteraction(interaction, { size: result.data.count });
+    const manager = await PaginationMessageManager.createOnInteraction(interaction, {
+      size: leaderboardDataList.length,
+    });
     const handleChange = async () => {
       const data = leaderboardDataList[manager.$currentPage];
       const rankImgUri =
