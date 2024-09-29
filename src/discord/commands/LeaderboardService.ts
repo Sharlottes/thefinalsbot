@@ -88,6 +88,15 @@ export default class LeaderboardService {
     interaction: Discord.ChatInputCommandInteraction,
   ) {
     if (!version || !platform) return;
+    // @ts-expect-error
+    if (!leaderboardsScheme[version].includes(platform)) {
+      autoDeleteMessage(
+        ErrorMessageManager.createOnChannel(interaction.channel!, {
+          description: "이 버전엔 해당 플렛폼이 없어요! 자동으로 전체 플렛폼에서 찾을게요...",
+        }).then((m) => m.message),
+      );
+      platform = leaderboardsScheme[version][0] as Platforms;
+    }
 
     await interaction.deferReply();
     const leaderboardDataList = await TFLeaderboard.main.get(version, platform);
@@ -220,6 +229,15 @@ ${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
     interaction: Discord.ChatInputCommandInteraction,
   ) {
     if (!version || !platform) return;
+    // @ts-expect-error
+    if (!leaderboardsScheme[version].includes(platform)) {
+      autoDeleteMessage(
+        ErrorMessageManager.createOnChannel(interaction.channel!, {
+          description: "이 버전엔 해당 플렛폼이 없어요! 자동으로 전체 플렛폼에서 찾을게요...",
+        }).then((m) => m.message),
+      );
+      platform = "crossplay";
+    }
 
     await interaction.deferReply();
     const searchTarget = target === "*" ? "" : target;
