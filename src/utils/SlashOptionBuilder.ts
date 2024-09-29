@@ -35,6 +35,8 @@ export default class SlashOptionBuilder<T extends string, TD extends string> {
       >;
     } & ({ required: true } | { required?: false; default?: OptionValueMap[OT] }),
   ): DiscordX.SlashOptionOptions<DiscordX.VerifyName<T>, DiscordX.NotEmpty<TD>> {
+    const existTransformer = options.transformer;
+
     options.transformer = async (
       value: OptionValueMap[OT],
       interaction: Discord.ChatInputCommandInteraction,
@@ -58,7 +60,7 @@ export default class SlashOptionBuilder<T extends string, TD extends string> {
       }
 
       if (!options.required && options.default) value ??= options.default;
-
+      if (existTransformer) value = await existTransformer(value, interaction);
       return value;
     };
     return options as any;
