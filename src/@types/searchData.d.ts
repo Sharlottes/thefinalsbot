@@ -112,7 +112,7 @@ interface LeaderboardDataS4 extends LeaderboardDataNameMixin {
   change: number;
   leagueNumber: number;
   league: string;
-  cashouts: number;
+  rankScore: number;
 }
 interface LeaderboardDataS3WT extends LeaderboardDataNameMixin {
   rank: number;
