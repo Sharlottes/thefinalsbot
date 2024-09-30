@@ -123,12 +123,14 @@ export default class LeaderboardService {
       return;
     }
 
-    let lastLeague = "";
+    let lastLeague = leaderboardDataList[0].league;
     const cutline: Record<string, number> = {};
     for (let i = 0; i < leaderboardDataList.length; i++) {
       const data = leaderboardDataList[i];
       if (data.league !== lastLeague) {
         lastLeague = data.league;
+        cutline[leaderboardDataList[i - 1].league] = leaderboardDataList[i - 1].rankScore;
+      } else if (i == leaderboardDataList.length - 1) {
         cutline[data.league] = data.rankScore;
       }
     }
