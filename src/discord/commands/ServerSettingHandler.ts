@@ -1,5 +1,5 @@
 import ServerSettingManager from "@/core/ServerSettingManager";
-import ServerSettingModel from "@/models/ServerSetting";
+import ServerSettingModel from "@/models/ServerSettingModel";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 import { PermissionGuard } from "@discordx/utilities";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";

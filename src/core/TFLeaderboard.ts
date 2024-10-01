@@ -1,4 +1,5 @@
 import leaderboardsScheme from "@/constants/leaderboardsScheme";
+import LeaderboardCacheModel from "@/models/LeaderboardCacheModel";
 import { StatusCodes } from "http-status-codes";
 
 const cronGap = 12 * 60 * 60 * 1000;
@@ -12,6 +13,13 @@ export default class TFLeaderboard {
   private static _main: TFLeaderboard;
   public static get main() {
     return this._main ?? (this._main = new TFLeaderboard());
+  }
+
+  public async init() {
+    setInterval(() => this.updateRecord(), cronGap);
+    console.time("TFLeaderboard init");
+    await this.updateRecord();
+    console.timeEnd("TFLeaderboard init");
   }
 
   private readonly leaderboardCache: Record<
@@ -33,6 +41,48 @@ export default class TFLeaderboard {
       )
       .flat(),
   );
+
+  private async updateRecord() {
+    const version = "s4";
+    const data = await this.update(`${version}-crossplay`);
+    if (!data) return;
+
+    const promises: Promise<unknown>[] = [];
+    for (const d of data) {
+      const userData = d as LeaderboardDataS3 | LeaderboardDataS4;
+
+      promises.push(
+        (async () => {
+          const doc = await LeaderboardCacheModel.findOne({
+            name: userData.name,
+          });
+          if (doc) {
+            if (doc.lastUpdated < new Date(Date.now() - cronGap)) return;
+            doc.data.push({
+              point: userData.rankScore,
+              league: userData.league,
+              rank: userData.rank,
+            });
+            doc.lastUpdated = new Date();
+            await doc.save();
+          } else {
+            await LeaderboardCacheModel.create({
+              name: userData.name,
+              data: [
+                {
+                  point: userData.rankScore,
+                  league: userData.league,
+                  rank: userData.rank,
+                },
+              ],
+              lastUpdated: Date.now(),
+            });
+          }
+        })(),
+      );
+    }
+    await Promise.all(promises);
+  }
 
   public async get<K extends keyof LeaderboardDataMap>(
     version: K,
