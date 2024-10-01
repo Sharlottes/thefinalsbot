@@ -4,7 +4,7 @@ import { SatoriOptions } from "satori/wasm";
 import fs from "fs";
 import path from "path";
 import { promisify } from "util";
-import RoomMakingDataModel from "./models/RoomMakingDataModel";
+import RoomMakingDataModel, { RoomMakingDataData } from "./models/RoomMakingDataModel";
 import { ChangeStreamDocument } from "mongodb";
 import RoomsMakerService from "./discord/features/roommake/RoomsMakerService";
 import FixedMessageRegister from "./core/FixedMessageRegister";

@@ -1,4 +1,4 @@
-import ServerSettingModel, { ChannelsSchema } from "@/models/ServerSetting";
+import ServerSettingModel, { ChannelsSchema, ServerSettingData } from "@/models/ServerSettingModel";
 import Vars from "@/Vars";
 import { ActionRowBuilder, bold, ButtonBuilder, ButtonStyle, ChannelType, OverwriteType } from "discord.js";
 import {
@@ -9,7 +9,6 @@ import {
 import ArrayInputMessageManager from "@/discord/messageManagers/inputs/ArrayInputMessageManager";
 import PrimitiveInputMessageManager from "@/discord/messageManagers/inputs/PrimitiveInputMessageManager";
 import ObjectInputMessageManager from "@/discord/messageManagers/inputs/ObjectInputMessageManager";
-import InputMessageManager from "@/discord/messageManagers/inputs/InputMessageManager";
 import autoDeleteMessage from "@/utils/autoDeleteMessage";
 
 const channelMap: Record<keyof ServerSettingData["channels"], { name: string; type: keyof typeof InputResolvers }> = {

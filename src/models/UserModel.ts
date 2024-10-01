@@ -1,12 +1,10 @@
 import mongoose, { Schema, Model, HydratedDocument } from "mongoose";
 import Discord, { inlineCode } from "discord.js";
 
-declare global {
-  interface UserData {
-    discordId: string;
-    battleTag: string;
-    profile: Profile;
-  }
+export interface UserData {
+  discordId: string;
+  battleTag: string;
+  profile: Profile;
 }
 interface UserModel extends Model<UserData, {}, {}> {
   findUserByInteration(

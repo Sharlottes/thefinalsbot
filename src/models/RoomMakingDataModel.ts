@@ -1,11 +1,9 @@
 import mongoose, { Schema, Model, HydratedDocument } from "mongoose";
 
-declare global {
-  interface RoomMakingDataData {
-    channelId: Discord.Snowflake;
-    name: string;
-    description: string;
-  }
+export interface RoomMakingDataData {
+  channelId: Discord.Snowflake;
+  name: string;
+  description: string;
 }
 interface RoomMakingDataModel extends Model<RoomMakingDataData, {}, {}> {
   findUserByInteration(
