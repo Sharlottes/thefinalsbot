@@ -20,7 +20,6 @@ import PrimitiveInputMessageManager from "../messageManagers/inputs/PrimitiveInp
 import { InputResolvers } from "../messageManagers/inputs/InputResolvers";
 import TFLeaderboard from "@/core/TFLeaderboard";
 import leaderboardsScheme from "@/constants/leaderboardsScheme";
-import throwInteraction from "@/utils/throwInteraction";
 
 const validVersions = {
   클베1: "cb1",
@@ -329,13 +328,13 @@ ${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
             const data = found as LeaderboardDataCB | LeaderboardDataOB | LeaderboardDataS1;
             exist.leaderboard[version] = [
               nameMap[version],
-              `${bold(data.league)} (${data.fame.toLocaleString("en-US")}RP)`,
+              `${bold(data.league)} (${bold(`${data.rank}위`)}, ${data.fame.toLocaleString("en-US")}RP)`,
             ];
             break;
           }
           case "s2": {
             const data = found as LeaderboardDataS2;
-            exist.leaderboard[version] = [nameMap[version], `${bold(data.league)}`];
+            exist.leaderboard[version] = [nameMap[version], `${bold(data.league)} (${bold(`${data.rank}위`)})`];
             break;
           }
           case "s3":
@@ -343,7 +342,7 @@ ${founds.map(([name, i]) => `* ${name} (${i + 1}페이지)`).join("\n")}`,
             const data = found as LeaderboardDataS3 | LeaderboardDataS4;
             exist.leaderboard[version] = [
               nameMap[version],
-              `${bold(data.league)} (${data.rankScore.toLocaleString("en-US")}RP)`,
+              `${bold(data.league)} (${bold(`${data.rank}위`)}, ${data.rankScore.toLocaleString("en-US")}RP)`,
             ];
             break;
           }

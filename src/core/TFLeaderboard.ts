@@ -2,12 +2,8 @@ import leaderboardsScheme from "@/constants/leaderboardsScheme";
 import LeaderboardCacheModel from "@/models/LeaderboardCacheModel";
 import { StatusCodes } from "http-status-codes";
 
-const cronGap = 12 * 60 * 60 * 1000;
-const toUpdate = [
-  "s4",
-  "s4sponsor",
-  "s4worldtour",
-] satisfies (keyof LeaderboardDataMap)[] as string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[] satisfies string[];
+const cronGap = 1 * 60 * 60 * 1000;
+const toUpdate = ["s4", "s4sponsor", "s4worldtour"] satisfies (keyof LeaderboardDataMap)[] as string[];
 
 export default class TFLeaderboard {
   private static _main: TFLeaderboard;
@@ -17,9 +13,7 @@ export default class TFLeaderboard {
 
   public async init() {
     setInterval(() => this.updateRecord(), cronGap);
-    console.time("TFLeaderboard init");
-    await this.updateRecord();
-    console.timeEnd("TFLeaderboard init");
+    this.updateRecord();
   }
 
   private readonly leaderboardCache: Record<
@@ -47,41 +41,40 @@ export default class TFLeaderboard {
     const data = await this.update(`${version}-crossplay`);
     if (!data) return;
 
-    const promises: Promise<unknown>[] = [];
-    for (const d of data) {
-      const userData = d as LeaderboardDataS3 | LeaderboardDataS4;
+    const docs = await LeaderboardCacheModel.find();
+    docs.forEach(async (doc, i) => {
+      const idx = data.findIndex((d) => d.name === doc.name);
+      if (idx == -1) return;
+      const newData = data[idx] as LeaderboardDataS4;
+      data.splice(idx, 1);
+      const latestData = doc.data.at(-1)!;
+      if (latestData.point === newData.rankScore || latestData.updatedAt > new Date(Date.now() - cronGap)) return;
 
-      promises.push(
-        (async () => {
-          const doc = await LeaderboardCacheModel.findOne({
-            name: userData.name,
-          });
-          if (doc) {
-            if (doc.lastUpdated < new Date(Date.now() - cronGap)) return;
-            doc.data.push({
-              point: userData.rankScore,
-              league: userData.league,
-              rank: userData.rank,
-            });
-            doc.lastUpdated = new Date();
-            await doc.save();
-          } else {
-            await LeaderboardCacheModel.create({
-              name: userData.name,
-              data: [
-                {
-                  point: userData.rankScore,
-                  league: userData.league,
-                  rank: userData.rank,
-                },
-              ],
-              lastUpdated: Date.now(),
-            });
-          }
-        })(),
-      );
+      console.log("update", i);
+      doc.data.push({
+        point: newData.rankScore,
+        leagueId: newData.leagueNumber,
+        rank: newData.rank,
+        updatedAt: new Date(),
+      });
+      await doc.save();
+    });
+
+    for (const d of data) {
+      const newData = d as LeaderboardDataS4;
+      LeaderboardCacheModel.create({
+        name: newData.name,
+        data: [
+          {
+            point: newData.rankScore,
+            league: newData.league,
+            rank: newData.rank,
+            updatedAt: new Date(),
+          },
+        ],
+        lastUpdated: Date.now(),
+      });
     }
-    await Promise.all(promises);
   }
 
   public async get<K extends keyof LeaderboardDataMap>(

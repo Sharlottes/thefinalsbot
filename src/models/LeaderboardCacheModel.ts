@@ -3,18 +3,18 @@ import mongoose, { Schema, Model, HydratedDocument } from "mongoose";
 interface LeaderboardCacheData {
   data: {
     point: number;
+    leagueId: number;
     rank: number;
-    league: string;
+    updatedAt: Date;
   }[];
   name: string;
-  version: string;
-  lastUpdated: Date;
 }
 
 const AddressSchema = new Schema({
   point: Number,
-  league: String,
+  leagueId: Number,
   rank: Number,
+  updatedAt: Date,
 });
 
 interface LeaderboardCacheModel extends Model<LeaderboardCacheData, {}, {}> {
@@ -25,7 +25,6 @@ interface LeaderboardCacheModel extends Model<LeaderboardCacheData, {}, {}> {
 const LeaderboardCacheSchema = new Schema<LeaderboardCacheData, LeaderboardCacheModel, {}>({
   data: { type: [AddressSchema], required: true },
   name: { type: String, required: true, unique: true },
-  lastUpdated: Date,
 });
 
 const LeaderboardCacheModel = mongoose.model<LeaderboardCacheData, LeaderboardCacheModel>(
