@@ -37,9 +37,15 @@ export default class TFLeaderboard {
   );
 
   private async updateRecord() {
+    console.log("check LB archive...");
     const version = "s4";
     const data = await this.update(`${version}-crossplay`);
-    if (!data) return;
+    if (!data) {
+      console.log("failed to fetch leaderboard data");
+      return;
+    }
+
+    let updateStack = 0;
 
     const docs = await LeaderboardCacheModel.find();
     docs.forEach(async (doc, i) => {
@@ -49,18 +55,19 @@ export default class TFLeaderboard {
       data.splice(idx, 1);
       const latestData = doc.data.at(-1)!;
       if (latestData.point === newData.rankScore || latestData.updatedAt > new Date(Date.now() - cronGap)) return;
-
-      console.log("update", i);
       doc.data.push({
         point: newData.rankScore,
         leagueId: newData.leagueNumber,
         rank: newData.rank,
         updatedAt: new Date(),
       });
+      updateStack++;
       await doc.save();
     });
 
+    let createStack = 0;
     for (const d of data) {
+      createStack++;
       const newData = d as LeaderboardDataS4;
       LeaderboardCacheModel.create({
         name: newData.name,
@@ -75,6 +82,9 @@ export default class TFLeaderboard {
         lastUpdated: Date.now(),
       });
     }
+    console.log(`total ${updateStack} updated!`);
+    console.log(`total ${createStack} created!`);
+    console.log("check LB archive... Done");
   }
 
   public async get<K extends keyof LeaderboardDataMap>(
