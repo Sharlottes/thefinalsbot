@@ -40,6 +40,7 @@ export default class AdminService {
   ) {
     const channel = interaction.channel;
     if (!channel) throw new Error("Channel not found");
+    await interaction.deferReply();
     if (!role && !target) {
       await autoDeleteMessage(
         ErrorMessageManager.createOnInteraction(interaction, {
