@@ -5,11 +5,7 @@ export interface RoomMakingDataData {
   name: string;
   description: string;
 }
-interface RoomMakingDataModel extends Model<RoomMakingDataData, {}, {}> {
-  findUserByInteration(
-    interaction: Discord.ChatInputCommandInteraction,
-  ): Promise<HydratedDocument<RoomMakingDataData, {}> | undefined>;
-}
+interface RoomMakingDataModel extends Model<RoomMakingDataData, {}, {}> {}
 const roomMakingDataSchema = new Schema<RoomMakingDataData, RoomMakingDataModel, {}>({
   channelId: { type: String, required: true, unique: true },
   name: { type: String, required: true },

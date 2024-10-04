@@ -4,11 +4,7 @@ export interface FixedMessageData {
   guildId: string;
   channels: string[];
 }
-interface FixedMessageModel extends Model<FixedMessageData, {}, {}> {
-  findUserByInteration(
-    interaction: Discord.ChatInputCommandInteraction,
-  ): Promise<HydratedDocument<FixedMessageData, {}> | undefined>;
-}
+interface FixedMessageModel extends Model<FixedMessageData, {}, {}> {}
 const fixedMessageSchema = new Schema<FixedMessageData, FixedMessageModel, {}>({
   guildId: { type: String, required: true, unique: true },
   channels: { type: [String], required: true, unique: true },
