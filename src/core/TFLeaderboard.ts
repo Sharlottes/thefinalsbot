@@ -1,5 +1,4 @@
 import leaderboardsScheme from "@/constants/leaderboardsScheme";
-import LeaderboardCacheModel from "@/models/LeaderboardCacheModel";
 import { StatusCodes } from "http-status-codes";
 
 const cronGap = 1 * 60 * 60 * 1000;
@@ -9,11 +8,6 @@ export default class TFLeaderboard {
   private static _main: TFLeaderboard;
   public static get main() {
     return this._main ?? (this._main = new TFLeaderboard());
-  }
-
-  public async init() {
-    setInterval(() => this.updateRecord(), cronGap);
-    this.updateRecord();
   }
 
   private readonly leaderboardCache: Record<
@@ -35,57 +29,6 @@ export default class TFLeaderboard {
       )
       .flat(),
   );
-
-  private async updateRecord() {
-    console.log("check LB archive...");
-    const version = "s4";
-    const data = await this.update(`${version}-crossplay`);
-    if (!data) {
-      console.log("failed to fetch leaderboard data");
-      return;
-    }
-
-    let updateStack = 0;
-
-    const docs = await LeaderboardCacheModel.find();
-    docs.forEach(async (doc, i) => {
-      const idx = data.findIndex((d) => d.name === doc.name);
-      if (idx == -1) return;
-      const newData = data[idx] as LeaderboardDataS4;
-      data.splice(idx, 1);
-      const latestData = doc.data.at(-1)!;
-      if (latestData.point === newData.rankScore || latestData.updatedAt > new Date(Date.now() - cronGap)) return;
-      doc.data.push({
-        point: newData.rankScore,
-        leagueId: newData.leagueNumber,
-        rank: newData.rank,
-        updatedAt: new Date(),
-      });
-      updateStack++;
-      await doc.save();
-    });
-
-    let createStack = 0;
-    for (const d of data) {
-      createStack++;
-      const newData = d as LeaderboardDataS4;
-      LeaderboardCacheModel.create({
-        name: newData.name,
-        data: [
-          {
-            point: newData.rankScore,
-            league: newData.league,
-            rank: newData.rank,
-            updatedAt: new Date(),
-          },
-        ],
-        lastUpdated: Date.now(),
-      });
-    }
-    console.log(`total ${updateStack} updated!`);
-    console.log(`total ${createStack} created!`);
-    console.log("check LB archive... Done");
-  }
 
   public async get<K extends keyof LeaderboardDataMap>(
     version: K,

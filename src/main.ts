@@ -12,7 +12,6 @@ import RoomsMakerService from "./discord/features/roommake/RoomsMakerService";
 import FixedMessageRegister from "./core/FixedMessageRegister";
 import mongoose from "mongoose";
 import ServerSettingManager from "./core/ServerSettingManager";
-import TFLeaderboard from "./core/TFLeaderboard";
 
 process
   .on("unhandledRejection", (err) => {
@@ -56,7 +55,6 @@ console.timeEnd("bot login...");
 console.time("connected to db");
 await mongoose.connect(process.env.MONGO_URL, { dbName: process.env.DB_NAME });
 console.timeEnd("connected to db");
-TFLeaderboard.main.init();
 console.time("init vars");
 await Vars.init(client);
 console.timeEnd("init vars");
